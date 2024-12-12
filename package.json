@@ -34,6 +34,9 @@
         "start": "ts-node src/index.ts",
         "build": "tsc"
     },
+    "engines": {
+        "node": ">=14.0.0"
+    },
     "husky": {
         "hooks": {
             "pre-commit": "yarn prettify"

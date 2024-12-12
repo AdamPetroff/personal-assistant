@@ -67,7 +67,11 @@ export class TrelloService {
 
             return response.data;
         } catch (error) {
-            logger.error("Failed to fetch Trello lists:", error.message);
+            if (error instanceof Error) {
+                logger.error("Failed to fetch Trello lists:", error.message);
+            } else {
+                logger.error("Failed to fetch Trello lists:", error);
+            }
             throw new Error("Failed to fetch lists from Trello");
         }
     }
