@@ -1,0 +1,49 @@
+{
+    "name": "your-node-app-name",
+    "version": "1.0.0",
+    "main": "src/index.ts",
+    "description": "Describe your app here.",
+    "dependencies": {
+        "@anthropic-ai/sdk": "^0.32.1",
+        "@linear/sdk": "^2.6.0",
+        "@typescript-eslint/eslint-plugin": "^8.18.0",
+        "axios": "^1.7.9",
+        "dotenv": "^16.4.7",
+        "envalid": "^8.0.0",
+        "eslint": "^9.16.0",
+        "express": "^4.21.1",
+        "node-telegram-bot-api": "^0.64.0",
+        "openai": "^4.76.1",
+        "twilio": "^5.3.7",
+        "winston": "^3.11.0"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.0",
+        "@types/node": "latest",
+        "@types/node-telegram-bot-api": "^0.64.2",
+        "nodemon": "latest",
+        "prettier": "latest",
+        "prettify": "latest",
+        "ts-node": "latest",
+        "typescript": "latest"
+    },
+    "scripts": {
+        "prettier": "prettier --write \"**/*.ts\" \"**/*.js\" \"**/*.json\" \"**/*.css\"",
+        "prettify": "pretty-quick --staged",
+        "dev": "nodemon src/index.ts",
+        "start": "ts-node src/index.ts"
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "yarn prettify"
+        }
+    },
+    "keywords": [
+        "node",
+        "ts",
+        "typescript"
+    ],
+    "author": {
+        "name": "author_name"
+    }
+}

@@ -1,0 +1,42 @@
+I want to create a telegram bot, which will serve as a personal assistant. 
+It will use AI to parse user messages and write responses. It will recognise when user wants either to be reminded of something, make a task for themselves, or find out what he planned for himself for any particular day.
+We should use Anthropic's Claude 3.5 with tool use to parse user intents and route to appropriate actions.
+
+The app will use the Linear API to keep track of both tasks and reminders:
+- Tasks will be stored as Linear issues
+- Reminders will also be Linear issues with:
+  - "reminder" label to distinguish them
+  - Due date for when to remind
+  - Status to track if reminder was sent/acknowledged
+
+Architecture:
+1. Telegram Bot Frontend
+   - Handles user interactions
+   - Formats responses
+   - Manages conversation flow
+
+2. Claude 3.5 Integration
+   - Parses natural language input using tool use capability
+   - Determines user intent (task/reminder/query)
+   - Extracts relevant details (dates, times, descriptions)
+   - Formats responses in natural language
+
+3. Linear Integration
+   - Stores all tasks and reminders
+   - Uses webhooks to notify bot of upcoming reminders
+   - Organizes items with labels and statuses
+   - Separate team/project for personal items
+
+4. Core Features:
+   - Create tasks with due dates
+   - Set reminders with specific times
+   - Query upcoming tasks/reminders
+   - Mark items as complete
+   - List items for specific dates
+
+Future Considerations:
+- May need database if Linear limitations are hit
+- Time zone handling for reminders
+- User authentication/authorization
+- Rate limit handling
+- Error logging and monitoring
