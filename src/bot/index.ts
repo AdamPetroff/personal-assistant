@@ -16,6 +16,7 @@ bot.getMe().then((botInfo) => {
 
 bot.on("message", async (ctx) => {
     const response = await handleMessage(ctx.text || "");
+    console.log("sending message", response);
     await bot.sendMessage(ctx.chat.id, response);
 });
 
