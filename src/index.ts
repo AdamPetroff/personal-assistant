@@ -16,7 +16,7 @@ async function startApp() {
     }
 }
 
-startApp();
+// startApp();
 
 process.on("uncaughtException", (error) => {
     logger.error("Uncaught exception:", error);
