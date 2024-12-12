@@ -60,7 +60,6 @@ export class TrelloService {
      */
     async getLists(): Promise<TrelloList[]> {
         try {
-            console.log(`${this.baseUrl}/boards/${this.boardId}/lists`);
             const response = await axios.get(`${this.baseUrl}/boards/${this.boardId}/lists`, {
                 params: this.auth
             });

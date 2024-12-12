@@ -30,3 +30,11 @@ process.on("unhandledRejection", (error) => {
 
 const app = express();
 app.post("/twiml/echo", twilioController.handleEchoStream);
+
+app.get("/", (req, res) => {
+    res.send("Hello World");
+});
+
+app.listen(3000, () => {
+    logger.info("Server is running on port 3000");
+});
