@@ -31,7 +31,8 @@
         "prettier": "prettier --write \"**/*.ts\" \"**/*.js\" \"**/*.json\" \"**/*.css\"",
         "prettify": "pretty-quick --staged",
         "dev": "nodemon src/index.ts",
-        "start": "ts-node src/index.ts",
+        "start-ts": "ts-node src/index.ts",
+        "start": "node dist/index.js",
         "build": "tsc"
     },
     "engines": {

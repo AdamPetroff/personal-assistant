@@ -1,6 +1,6 @@
 import { logger } from "./utils/logger";
 import { bot } from "./bot";
-import "../src/services/twillio";
+import "./services/twillio";
 import { twilioController } from "./controllers/twilioController";
 import express from "express";
 
