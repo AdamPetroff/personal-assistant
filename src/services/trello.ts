@@ -1,6 +1,9 @@
 import axios from "axios";
 import { logger } from "../utils/logger";
 import { env } from "../config/constants";
+import { openaiService } from "./openai";
+
+const listId = "675a0dd51091fad3e2ebdcf1";
 
 interface TrelloConfig {
     apiKey: string;
@@ -159,8 +162,157 @@ export class TrelloService {
     }
 }
 
-export const trelloService = new TrelloService({
-    apiKey: env.TRELLO_API_KEY,
-    token: env.TRELLO_TOKEN,
-    boardId: env.TRELLO_BOARD_ID
-});
+export function initTrelloService() {
+    const trelloService = new TrelloService({
+        apiKey: env.TRELLO_API_KEY,
+        token: env.TRELLO_TOKEN,
+        boardId: env.TRELLO_BOARD_ID
+    });
+
+    openaiService
+        .registerTool({
+            type: "function",
+            function: {
+                name: "create_task",
+                description: "Create a new task with optional due date",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        title: { type: "string", description: "The title of the task" },
+                        description: { type: "string", description: "A detailed description of the task" },
+                        dueDate: {
+                            type: "string",
+                            description: "Optional ISO date string for when the task is due",
+                            format: "date-time"
+                        }
+                    },
+                    required: ["title"]
+                }
+            },
+            handler: async (parameters) => {
+                const listId = "675a0dd51091fad3e2ebdcf1"; // TODO: Make this configurable
+                return trelloService.createCard(
+                    listId,
+                    parameters.title,
+                    parameters.description,
+                    parameters.dueDate ? new Date(parameters.dueDate) : undefined
+                );
+            }
+        })
+        .registerTool({
+            type: "function",
+            function: {
+                name: "create_reminder",
+                description: "Set a reminder for a specific date and time",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        title: {
+                            type: "string",
+                            description: "What to be reminded about"
+                        },
+                        reminderTime: {
+                            type: "string",
+                            description: "ISO date-time string for when to send the reminder",
+                            format: "date-time"
+                        }
+                    },
+                    required: ["title", "reminderTime"]
+                }
+            },
+            handler: async (parameters) => {
+                const remindersListId = "675a0dd51091fad3e2ebdcf2"; // TODO: Make this configurable
+                return trelloService.createCard(
+                    remindersListId,
+                    parameters.title,
+                    "Reminder",
+                    new Date(parameters.reminderTime)
+                );
+            }
+        })
+        .registerTool({
+            type: "function",
+            function: {
+                name: "query_items",
+                description: "Query upcoming tasks and reminders",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        date: {
+                            type: "string",
+                            description: "Optional ISO date string to query items for a specific date",
+                            format: "date"
+                        },
+                        type: {
+                            type: "string",
+                            enum: ["all", "tasks", "reminders"],
+                            description: "Type of items to query"
+                        }
+                    },
+                    required: ["type"]
+                }
+            },
+            handler: async (parameters) => {
+                const cards = await trelloService.getCardsInList(listId);
+
+                // Filter cards based on type and date if provided
+                return cards.filter((card) => {
+                    if (parameters.date && card.due) {
+                        const cardDate = new Date(card.due).toISOString().split("T")[0];
+                        if (cardDate !== parameters.date) {
+                            return false;
+                        }
+                    }
+
+                    if (parameters.type === "all") return true;
+
+                    // Assuming cards in the reminders list are reminders
+                    const isReminder = card.idList === "675a0dd51091fad3e2ebdcf2";
+                    return parameters.type === "reminders" ? isReminder : !isReminder;
+                });
+            }
+        })
+        .registerTool({
+            type: "function",
+            function: {
+                name: "complete_task",
+                description: "Mark a task as complete",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        taskId: {
+                            type: "string",
+                            description: "The ID of the task to mark as complete"
+                        }
+                    },
+                    required: ["taskId"]
+                }
+            },
+            handler: async (parameters) => {
+                return trelloService.updateCardCompletion(parameters.taskId, true);
+            }
+        })
+        .registerTool({
+            type: "function",
+            function: {
+                name: "delete_task",
+                description: "Delete a task",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        taskId: {
+                            type: "string",
+                            description: "The ID of the task to delete"
+                        }
+                    },
+                    required: ["taskId"]
+                }
+            },
+            handler: async (parameters) => {
+                await trelloService.deleteCard(parameters.taskId);
+                return { success: true, message: "Task deleted successfully" };
+            }
+        });
+
+    return trelloService;
+}
