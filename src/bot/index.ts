@@ -3,7 +3,7 @@ import { TELEGRAM_BOT_TOKEN } from "../config/constants";
 import { handleMessage } from "./handlers/messageHandler";
 import { logger } from "../utils/logger";
 import { initTrelloService } from "../services/trello";
-import { CoinMarketCapService } from "../services/coinMarketCap";
+import { CoinMarketCapService, initCoinMarketCapService } from "../services/coinMarketCap";
 import cron from "node-cron";
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
@@ -18,6 +18,7 @@ bot.getMe().then((botInfo) => {
 });
 
 initTrelloService();
+initCoinMarketCapService();
 
 const coinMarketCapService = new CoinMarketCapService();
 
