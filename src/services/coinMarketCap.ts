@@ -24,11 +24,6 @@ export class CoinMarketCapService {
      */
     async getTokenPrice(symbol: string): Promise<{ price: number; change24h: number | null }> {
         try {
-            console.log(`${this.baseUrl}/cryptocurrency/quotes/latest?symbol=${symbol.toUpperCase()}`, {
-                headers: {
-                    "X-CMC_PRO_API_KEY": this.apiKey
-                }
-            });
             const response = await axios.get<CoinMarketCapQuote>(`${this.baseUrl}/cryptocurrency/quotes/latest`, {
                 params: {
                     symbol: symbol.toUpperCase()
