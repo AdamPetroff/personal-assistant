@@ -3,7 +3,11 @@ import { logger } from "../utils/logger";
 import { env } from "../config/constants";
 import { openaiService } from "./openai";
 
-const listId = "675a0dd51091fad3e2ebdcf1";
+const todoListId = "675a0dd51091fad3e2ebdcf1";
+const doingListId = "675a0dd555a79cada51dd102";
+const doneListId = "675a0dd571d291845551064d";
+const remindersListId = "6781aeadda90c1ca4fb7e2ab";
+export const interestsListId = "6781af478a024f11a93b752d";
 
 interface TrelloConfig {
     apiKey: string;
@@ -116,8 +120,11 @@ export class TrelloService {
      */
     async updateCardCompletion(cardId: string, isComplete: boolean): Promise<TrelloCard> {
         try {
+            const ANSWERED_LABEL_ID = "6781b6bc228d4321daaef291";
+
             const response = await axios.put(`${this.baseUrl}/cards/${cardId}`, {
                 dueComplete: isComplete,
+                idLabels: isComplete ? [ANSWERED_LABEL_ID] : [],
                 ...this.auth
             });
 
@@ -147,6 +154,18 @@ export class TrelloService {
         }
     }
 
+    async getBoardLabels(): Promise<Array<{ id: string; name: string; color: string }>> {
+        try {
+            const response = await axios.get(`${this.baseUrl}/boards/${this.boardId}/labels`, {
+                params: this.auth
+            });
+            return response.data;
+        } catch (error) {
+            logger.error("Failed to fetch board labels:", error);
+            throw new Error("Failed to fetch board labels");
+        }
+    }
+
     /**
      * Delete a card
      */
@@ -168,6 +187,10 @@ export function initTrelloService() {
         token: env.TRELLO_TOKEN,
         boardId: env.TRELLO_BOARD_ID
     });
+
+    // trelloService.getBoardLabels().then((lists) => {
+    //     console.log(lists);
+    // });
 
     openaiService
         .registerTool({
@@ -253,7 +276,7 @@ export function initTrelloService() {
                 }
             },
             handler: async (parameters) => {
-                const cards = await trelloService.getCardsInList(listId);
+                const cards = await trelloService.getCardsInList(todoListId);
 
                 // Filter cards based on type and date if provided
                 return cards.filter((card) => {
@@ -311,6 +334,70 @@ export function initTrelloService() {
             handler: async (parameters) => {
                 await trelloService.deleteCard(parameters.taskId);
                 return { success: true, message: "Task deleted successfully" };
+            }
+        })
+        .registerTool({
+            type: "function",
+            function: {
+                name: "track_interest_in_topic",
+                description:
+                    "Use when the user expresses curiosity or interest in learning more about a topic or subject",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        topic: {
+                            type: "string",
+                            description: "The topic or interest to track"
+                        },
+                        description: {
+                            type: "string",
+                            description: "Additional details or context about the interest"
+                        }
+                    },
+                    required: ["topic"]
+                }
+            },
+            handler: async (parameters) => {
+                await trelloService.createCard(interestsListId, parameters.topic, parameters.description);
+                return {
+                    success: true,
+                    message: "Interest added successfully. User will be notified with the details about the topic soon."
+                };
+            }
+        })
+        .registerTool({
+            type: "function",
+            function: {
+                name: "get_interests",
+                description: "Retrieve all tracked interests",
+                parameters: {
+                    type: "object",
+                    properties: {}
+                }
+            },
+            handler: async () => {
+                return trelloService.getCardsInList(interestsListId);
+            }
+        })
+        .registerTool({
+            type: "function",
+            function: {
+                name: "remove_interest",
+                description: "Remove a tracked interest",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        interestId: {
+                            type: "string",
+                            description: "The ID of the interest to remove"
+                        }
+                    },
+                    required: ["interestId"]
+                }
+            },
+            handler: async (parameters) => {
+                await trelloService.deleteCard(parameters.interestId);
+                return { success: true, message: "Interest removed successfully" };
             }
         });
 

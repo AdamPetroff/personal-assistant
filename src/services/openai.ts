@@ -12,7 +12,7 @@ export type ToolRegistration = {
         parameters: {
             type: "object";
             properties: Record<string, any>;
-            required: string[];
+            required?: string[];
         };
     };
     handler: IntentHandler;
@@ -51,7 +51,6 @@ export class OpenAIService {
         intentDescription: string;
     }> {
         try {
-            console.log(this.tools.map((tool) => tool.function.name));
             const response = await this.client.chat.completions.create({
                 model: "gpt-4o",
                 max_tokens: 1024,
@@ -120,6 +119,30 @@ export class OpenAIService {
         } catch (error) {
             logger.error("Error generating response with OpenAI:", error);
             throw new Error("Failed to generate response");
+        }
+    }
+
+    async getTopicInformation(topic: string, context?: string): Promise<string> {
+        try {
+            const response = await this.client.chat.completions.create({
+                model: "gpt-4",
+                messages: [
+                    {
+                        role: "system",
+                        content:
+                            "You are a knowledgeable assistant. Provide a concise but informative overview of the given topic. Include key points, interesting facts, and potential resources for learning more. Keep the response under 300 words."
+                    },
+                    {
+                        role: "user",
+                        content: `Tell me about: ${topic}\n\n${context}`
+                    }
+                ]
+            });
+
+            return response.choices[0]?.message?.content || "No information available.";
+        } catch (error) {
+            logger.error("Error fetching topic information:", error);
+            throw new Error("Failed to fetch topic information");
         }
     }
 }
