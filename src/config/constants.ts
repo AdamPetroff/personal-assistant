@@ -26,7 +26,11 @@ export const env = cleanEnv(process.env, {
     BASESCAN_API_KEY: str({ default: "" }),
 
     // CoinMarketCap API key
-    COIN_MARKET_CAP_API_KEY: str()
+    COIN_MARKET_CAP_API_KEY: str(),
+
+    // Binance API credentials
+    BINANCE_API_KEY: str({ default: "" }),
+    BINANCE_API_SECRET: str({ default: "" })
 });
 
 // Export constants

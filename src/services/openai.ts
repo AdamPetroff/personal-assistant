@@ -221,3 +221,24 @@ export class OpenAIService {
 }
 
 export const openaiService = new OpenAIService();
+
+export function registerTotalCryptoHoldingsIntent(
+    getTotalHoldingsFunction: () => Promise<{ totalUsd: number; formattedReport: string }>
+) {
+    openaiService.registerTool({
+        type: "function",
+        function: {
+            name: "get_total_crypto_holdings",
+            description: "Get the total value of all your crypto holdings (Binance + wallets)",
+            parameters: {
+                type: "object",
+                properties: {},
+                required: []
+            }
+        },
+        handler: async () => {
+            const { formattedReport } = await getTotalHoldingsFunction();
+            return formattedReport;
+        }
+    });
+}

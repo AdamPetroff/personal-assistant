@@ -1,9 +1,10 @@
 import axios from "axios";
 import BigNumber from "bignumber.js";
 import { logger } from "../utils/logger";
-import { openaiService } from "./openai";
+import { openaiService, registerTotalCryptoHoldingsIntent } from "./openai";
 import { CoinMarketCapService } from "./coinMarketCap";
 import { env } from "../config/constants";
+import { BinanceService, binanceService } from "./binance";
 
 // Supported blockchain networks
 export enum BlockchainNetwork {
@@ -449,17 +450,38 @@ export class WalletService {
      * Calculate USD value for token balances
      */
     async calculateUsdValues(tokenBalances: TokenBalance[]): Promise<TokenBalance[]> {
+        if (tokenBalances.length === 0) {
+            return [];
+        }
+
         const result = [...tokenBalances];
 
-        for (const token of result) {
-            try {
-                const { price } = await this.coinMarketCapService.getTokenPrice(token.symbol);
-                token.tokenPrice = price;
-                token.valueUsd = token.balance.multipliedBy(price).toNumber();
-            } catch (error) {
-                logger.warn(`Failed to fetch price for ${token.symbol}:`, error);
-                // Keep token in the list but with undefined price/value
+        try {
+            // Extract all unique symbols for batch request
+            const symbols = [...new Set(result.map((token) => token.symbol))];
+
+            // Fetch all prices in a single API call
+            const tokenPrices = await this.coinMarketCapService.getMultipleTokenPrices(symbols);
+
+            // Update token balances with price data
+            for (const token of result) {
+                try {
+                    const priceData = tokenPrices[token.symbol.toUpperCase()];
+
+                    if (priceData) {
+                        token.tokenPrice = priceData.price;
+                        token.valueUsd = token.balance.multipliedBy(priceData.price).toNumber();
+                    } else {
+                        logger.warn(`No price data found for ${token.symbol}`);
+                    }
+                } catch (error) {
+                    logger.warn(`Failed to process price for ${token.symbol}:`, error);
+                    // Keep token in the list but with undefined price/value
+                }
             }
+        } catch (error) {
+            logger.error("Failed to fetch batch prices for tokens:", error);
+            // Continue with tokens having undefined prices/values
         }
 
         return result;
@@ -550,6 +572,9 @@ export class WalletService {
         const formatCurrency = (value: number) =>
             value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+        // Minimum USD value to show in reports
+        const minUsdValueToShow = 10;
+
         let report = `💰 *Wallet Holdings Report* 💰\n\n`;
         report += `*Total Value*: $${formatCurrency(walletData.totalValueUsd)}\n\n`;
 
@@ -560,9 +585,9 @@ export class WalletService {
             report += `*${walletLabel}* - ${shortAddress}\n`;
             report += `*Value*: $${formatCurrency(wallet.valueUsd)}\n`;
 
-            // Sort tokens by USD value (highest first)
+            // Sort tokens by USD value (highest first) and filter out low-value tokens
             const sortedTokens = [...wallet.tokenBalances]
-                .filter((token) => token.valueUsd !== undefined)
+                .filter((token) => (token.valueUsd || 0) >= minUsdValueToShow)
                 .sort((a, b) => (b.valueUsd || 0) - (a.valueUsd || 0));
 
             if (sortedTokens.length > 0) {
@@ -581,8 +606,23 @@ export class WalletService {
                     const remainingValue = sortedTokens.slice(5).reduce((sum, token) => sum + (token.valueUsd || 0), 0);
                     report += `  • Plus ${sortedTokens.length - 5} more tokens ($${formatCurrency(remainingValue)})\n`;
                 }
+
+                // If there are low-value tokens that were filtered out, mention them
+                const lowValueTokens = wallet.tokenBalances.filter(
+                    (token) => (token.valueUsd || 0) < minUsdValueToShow && (token.valueUsd || 0) > 0
+                );
+                if (lowValueTokens.length > 0) {
+                    const lowValueTotal = lowValueTokens.reduce((sum, token) => sum + (token.valueUsd || 0), 0);
+                    report += `  • ${lowValueTokens.length} low-value tokens not shown ($${formatCurrency(lowValueTotal)})\n`;
+                }
             } else {
-                report += `No token balances found.\n`;
+                // Check if there are any tokens at all
+                const anyTokens = wallet.tokenBalances.some((token) => (token.valueUsd || 0) > 0);
+                if (anyTokens) {
+                    report += `Only low-value tokens (< $${minUsdValueToShow}) found.\n`;
+                } else {
+                    report += `No token balances found.\n`;
+                }
             }
 
             report += `\n`;
@@ -593,174 +633,78 @@ export class WalletService {
     }
 }
 
-export function initWalletService(coinMarketCapService: CoinMarketCapService) {
+// Add a new method to get combined holdings (wallets + Binance)
+async function getTotalCryptoHoldings(
+    walletService: WalletService
+): Promise<{ totalUsd: number; formattedReport: string }> {
+    try {
+        // Minimum USD value to show in reports
+        const minUsdValueToShow = 10;
+
+        // Get wallet holdings
+        const walletData = await walletService.getAllWalletsValueUsd();
+        const walletTotalUsd = walletData.totalValueUsd;
+
+        // Get Binance holdings
+        let binanceTotalUsd = 0;
+        try {
+            const binanceInstance = binanceService();
+            binanceTotalUsd = await binanceInstance.getTotalBalanceUsd();
+        } catch (error) {
+            logger.warn("Could not fetch Binance balance:", error);
+            // Continue without Binance data
+        }
+
+        // Calculate total
+        const totalUsd = walletTotalUsd + binanceTotalUsd;
+
+        // Format report
+        let report = `*Total Crypto Holdings*\n\n`;
+        report += `*Total Value:* $${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n`;
+
+        // Add wallet breakdown
+        report += `*Wallet Holdings:* $${walletTotalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+
+        // Filter wallets to only show those with significant value
+        const significantWallets = walletData.wallets.filter((wallet) => wallet.valueUsd >= minUsdValueToShow);
+        const lowValueWallets = walletData.wallets.filter(
+            (wallet) => wallet.valueUsd > 0 && wallet.valueUsd < minUsdValueToShow
+        );
+
+        // Show significant wallets
+        for (const wallet of significantWallets) {
+            report += `• ${wallet.label || wallet.address.substring(0, 8)}... (${wallet.network}): $${wallet.valueUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+        }
+
+        // Mention low-value wallets if any
+        if (lowValueWallets.length > 0) {
+            const lowValueTotal = lowValueWallets.reduce((sum, wallet) => sum + wallet.valueUsd, 0);
+            report += `• ${lowValueWallets.length} low-value wallets not shown: $${lowValueTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+        }
+
+        // Add Binance breakdown
+        report += `\n*Binance Holdings:* $${binanceTotalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+
+        return { totalUsd, formattedReport: report };
+    } catch (error) {
+        logger.error("Failed to get total crypto holdings:", error);
+        throw new Error("Failed to get total crypto holdings");
+    }
+}
+
+export function initWalletService(coinMarketCapService: CoinMarketCapService): WalletService {
     const walletService = new WalletService(coinMarketCapService);
 
-    // Register tools with OpenAI service
-
-    // 1. Add wallet
+    // Register the wallet balance capability with OpenAI service
     openaiService.registerTool({
         type: "function",
         function: {
-            name: "add_wallet",
-            description: "Add a wallet address to track its token balances",
+            name: "get_wallet_balance",
+            description: "Get your crypto wallet balances across different blockchains",
             parameters: {
                 type: "object",
-                properties: {
-                    address: {
-                        type: "string",
-                        description: "The wallet address to track"
-                    },
-                    network: {
-                        type: "string",
-                        description:
-                            "The blockchain network (ethereum, bsc, polygon, solana, arbitrum, optimism, avalanche, base)",
-                        enum: Object.values(BlockchainNetwork)
-                    },
-                    label: {
-                        type: "string",
-                        description: "Optional label for the wallet"
-                    }
-                },
-                required: ["address", "network"]
-            }
-        },
-        handler: async (parameters) => {
-            const { address, network, label } = parameters;
-            walletService.addWallet(address, network as BlockchainNetwork, label);
-            return `Wallet ${address} on ${network} ${label ? `(${label})` : ""} has been added successfully.`;
-        }
-    });
-
-    // 2. Remove wallet
-    openaiService.registerTool({
-        type: "function",
-        function: {
-            name: "remove_wallet",
-            description: "Remove a tracked wallet address",
-            parameters: {
-                type: "object",
-                properties: {
-                    address: {
-                        type: "string",
-                        description: "The wallet address to remove"
-                    },
-                    network: {
-                        type: "string",
-                        description:
-                            "The blockchain network (ethereum, bsc, polygon, solana, arbitrum, optimism, avalanche, base)",
-                        enum: Object.values(BlockchainNetwork)
-                    }
-                },
-                required: ["address", "network"]
-            }
-        },
-        handler: async (parameters) => {
-            const { address, network } = parameters;
-            const removed = walletService.removeWallet(address, network as BlockchainNetwork);
-
-            if (removed) {
-                return `Wallet ${address} on ${network} has been removed successfully.`;
-            } else {
-                return `Wallet ${address} on ${network} was not found.`;
-            }
-        }
-    });
-
-    // 3. List wallets
-    openaiService.registerTool({
-        type: "function",
-        function: {
-            name: "list_wallets",
-            description: "List all tracked wallet addresses",
-            parameters: {
-                type: "object",
-                properties: {}
-            }
-        },
-        handler: async () => {
-            const wallets = walletService.getWallets();
-
-            if (wallets.length === 0) {
-                return "No wallets are currently being tracked.";
-            }
-
-            let response = "Tracked wallets:\n\n";
-
-            for (const wallet of wallets) {
-                const walletLabel = wallet.label ? `${wallet.label} (${wallet.network})` : `${wallet.network}`;
-                const shortAddress = `${wallet.address.substring(0, 6)}...${wallet.address.substring(wallet.address.length - 4)}`;
-                response += `- ${walletLabel}: ${shortAddress}\n`;
-            }
-
-            return response;
-        }
-    });
-
-    // 4. Get wallet value
-    openaiService.registerTool({
-        type: "function",
-        function: {
-            name: "get_wallet_value",
-            description: "Get the current value of a specific wallet in USD",
-            parameters: {
-                type: "object",
-                properties: {
-                    address: {
-                        type: "string",
-                        description: "The wallet address to check"
-                    },
-                    network: {
-                        type: "string",
-                        description:
-                            "The blockchain network (ethereum, bsc, polygon, solana, arbitrum, optimism, avalanche, base)",
-                        enum: Object.values(BlockchainNetwork)
-                    }
-                },
-                required: ["address", "network"]
-            }
-        },
-        handler: async (parameters) => {
-            const { address, network } = parameters;
-            const { totalValueUsd, tokenBalances } = await walletService.getWalletValueUsd(
-                address,
-                network as BlockchainNetwork
-            );
-
-            let response = `Wallet ${address} on ${network} is worth $${totalValueUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.\n\n`;
-
-            // Sort tokens by USD value (highest first)
-            const sortedTokens = [...tokenBalances]
-                .filter((token) => token.valueUsd !== undefined)
-                .sort((a, b) => (b.valueUsd || 0) - (a.valueUsd || 0));
-
-            if (sortedTokens.length > 0) {
-                response += `Token holdings:\n`;
-
-                for (const token of sortedTokens) {
-                    const valueStr = token.valueUsd
-                        ? `$${token.valueUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : "Unknown value";
-
-                    response += `- ${token.balance.toFormat(4)} ${token.symbol} (${valueStr})\n`;
-                }
-            } else {
-                response += `No token balances found.`;
-            }
-
-            return response;
-        }
-    });
-
-    // 5. Get all wallets value
-    openaiService.registerTool({
-        type: "function",
-        function: {
-            name: "get_all_wallets_value",
-            description: "Get the current value of all tracked wallets in USD",
-            parameters: {
-                type: "object",
-                properties: {}
+                properties: {},
+                required: []
             }
         },
         handler: async () => {
@@ -768,6 +712,9 @@ export function initWalletService(coinMarketCapService: CoinMarketCapService) {
             return walletService.formatWalletReport(walletData);
         }
     });
+
+    // Register the total holdings capability
+    registerTotalCryptoHoldingsIntent(() => getTotalCryptoHoldings(walletService));
 
     return walletService;
 }

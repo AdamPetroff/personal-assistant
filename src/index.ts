@@ -3,9 +3,18 @@ import { bot } from "./bot";
 import "./services/twillio";
 import { twilioController } from "./controllers/twilioController";
 import express from "express";
+import { CoinMarketCapService, initCoinMarketCapService } from "./services/coinMarketCap";
+import { initWalletService } from "./services/wallet";
+import { initBinanceService } from "./services/binance";
 
 async function startApp() {
     try {
+        // Initialize services
+        initCoinMarketCapService();
+        const coinMarketCapService = new CoinMarketCapService();
+        const walletService = initWalletService(coinMarketCapService);
+        const binanceService = initBinanceService(coinMarketCapService);
+
         // Start the bot
         await bot.startPolling();
 
