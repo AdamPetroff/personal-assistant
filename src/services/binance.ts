@@ -123,9 +123,6 @@ export class BinanceService {
             const cryptoBalances: { asset: string; total: BigNumber }[] = [];
 
             for (const balance of nonZeroBalances) {
-                if (balance.asset === "TRX") {
-                    console.log(balance);
-                }
                 const total = new BigNumber(balance.free).plus(balance.locked);
 
                 if (this.isFiatCurrency(balance.asset)) {
@@ -162,9 +159,6 @@ export class BinanceService {
                     // Process each token with the fetched prices
                     for (const { asset, total } of cryptoBalances) {
                         const priceData = tokenPrices[asset.toUpperCase()];
-                        if (asset === "TRX") {
-                            console.log(total.toString(), priceData.price, cryptoBalances);
-                        }
 
                         if (priceData) {
                             const valueUsd = total.times(priceData.price).toNumber();
