@@ -52,9 +52,18 @@ export class CoinMarketCapService {
      * Format price response for user display
      */
     formatPriceMessage(symbol: string, price: number, change24h: number | null): string {
-        const changeStr = change24h ? `(${change24h > 0 ? "+" : ""}${change24h.toFixed(2)}% 24h)` : "";
+        const formattedPrice = price.toLocaleString();
+        const symbolBold = `*${symbol.toUpperCase()}*`;
 
-        return `${symbol.toUpperCase()}: $${price.toLocaleString()} ${changeStr}`.trim();
+        let changeStr = "";
+        if (change24h !== null) {
+            const changePrefix = change24h > 0 ? "+" : "";
+            const changeValue = change24h.toFixed(2);
+            const changeColor = change24h > 0 ? "🟢" : "🔴";
+            changeStr = ` ${changeColor} ${changePrefix}${changeValue}% 24h`;
+        }
+
+        return `${symbolBold}: $${formattedPrice}${changeStr}`.trim();
     }
 }
 
