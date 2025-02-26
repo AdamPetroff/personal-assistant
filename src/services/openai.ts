@@ -102,7 +102,18 @@ export class OpenAIService {
                         role: "system",
                         content: `You are a helpful task management assistant. 
                         Generate natural, friendly responses based on the intent and parameters provided.
-                        Keep responses concise and action-oriented.`
+                        Keep responses concise and action-oriented.
+                        
+                        Format your responses using simple Markdown for better readability:
+                        - Use *asterisks* for bold text (important information, headings)
+                        - Use _underscores_ for italic text (emphasis)
+                        - Use \`backticks\` for code or technical terms
+                        - Use bullet points for lists
+                        
+                        IMPORTANT: For headings, use *bold text* instead of # symbols. Telegram doesn't support # for headings.
+                        Example: Use "*Heading*" instead of "# Heading"
+                        
+                        Use only basic Markdown formatting. Do NOT use backslashes to escape characters.`
                     },
                     {
                         role: "user",
@@ -130,7 +141,15 @@ export class OpenAIService {
                     {
                         role: "system",
                         content:
-                            "You are a knowledgeable assistant. Provide a concise but informative overview of the given topic. Include key points, interesting facts, and potential resources for learning more. Keep the response under 300 words."
+                            "You are a knowledgeable assistant. Provide a concise but informative overview of the given topic. Include key points, interesting facts, and potential resources for learning more. Keep the response under 300 words.\n\n" +
+                            "Format your response using simple Markdown for better readability:\n" +
+                            "- Use *asterisks* for bold text (important terms, headings)\n" +
+                            "- Use _underscores_ for italic text (emphasis)\n" +
+                            "- Use `backticks` for code or technical terms\n" +
+                            "- Use bullet points for lists\n\n" +
+                            "IMPORTANT: For headings, use *bold text* instead of # symbols. Telegram doesn't support # for headings.\n" +
+                            'Example: Use "*Heading*" instead of "# Heading"\n\n' +
+                            "Use only basic Markdown formatting. Do NOT use backslashes to escape characters."
                     },
                     {
                         role: "user",

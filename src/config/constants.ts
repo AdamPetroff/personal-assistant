@@ -13,7 +13,20 @@ export const env = cleanEnv(process.env, {
     ANTHROPIC_API_KEY: str(),
     OPENAI_API_KEY: str(),
     TWILIO_ACCOUNT_SID: str(),
-    TWILIO_AUTH_TOKEN: str()
+    TWILIO_AUTH_TOKEN: str(),
+
+    // Blockchain explorer API keys (optional but validated if present)
+    ETHERSCAN_API_KEY: str({ default: "" }),
+    BSCSCAN_API_KEY: str({ default: "" }),
+    POLYGONSCAN_API_KEY: str({ default: "" }),
+    SOLSCAN_API_KEY: str({ default: "" }),
+    ARBISCAN_API_KEY: str({ default: "" }),
+    OPTIMISTIC_ETHERSCAN_API_KEY: str({ default: "" }),
+    SNOWTRACE_API_KEY: str({ default: "" }),
+    BASESCAN_API_KEY: str({ default: "" }),
+
+    // CoinMarketCap API key
+    COIN_MARKET_CAP_API_KEY: str()
 });
 
 // Export constants
