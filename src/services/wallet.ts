@@ -79,6 +79,35 @@ export class WalletService {
         }
     ];
 
+    // Hardcoded list of wallets to track
+    private readonly walletsList: WalletData[] = [
+        {
+            address: "0x7f44f6E49346538cfD8fFaAd3c60407f069BE4f5",
+            network: BlockchainNetwork.BSC,
+            label: "trezor"
+        },
+        {
+            address: "0x7f44f6E49346538cfD8fFaAd3c60407f069BE4f5",
+            network: BlockchainNetwork.BASE,
+            label: "trezor"
+        },
+        {
+            address: "0xCA4996676cF26914c06b558E8D81933F75a99357",
+            network: BlockchainNetwork.ETHEREUM,
+            label: "work"
+        },
+        {
+            address: "0xCA4996676cF26914c06b558E8D81933F75a99357",
+            network: BlockchainNetwork.BSC,
+            label: "work"
+        },
+        {
+            address: "0xCA4996676cF26914c06b558E8D81933F75a99357",
+            network: BlockchainNetwork.POLYGON,
+            label: "work"
+        }
+    ];
+
     // API keys for blockchain explorers
     private readonly etherscanApiKey = env.ETHERSCAN_API_KEY;
     private readonly bscscanApiKey = env.BSCSCAN_API_KEY;
@@ -94,6 +123,9 @@ export class WalletService {
 
         // Load wallets from environment variables if available
         this.loadWalletsFromEnv();
+
+        // Load wallets from hardcoded list
+        this.loadWalletsFromList();
     }
 
     /**
@@ -115,6 +147,15 @@ export class WalletService {
             const label = parts.slice(2).join("_").toLowerCase();
 
             this.addWallet(value, network, label);
+        }
+    }
+
+    /**
+     * Load wallet addresses from hardcoded walletsList
+     */
+    private loadWalletsFromList() {
+        for (const wallet of this.walletsList) {
+            this.addWallet(wallet.address, wallet.network, wallet.label);
         }
     }
 
