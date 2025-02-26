@@ -164,6 +164,60 @@ export class OpenAIService {
             throw new Error("Failed to fetch topic information");
         }
     }
+
+    async generateConversationalResponse(
+        userMessage: string,
+        conversationHistory: Array<{ role: string; content: string }>
+    ): Promise<string> {
+        try {
+            // Prepare the messages array with the system message and conversation history
+            const messages = [
+                {
+                    role: "system" as const,
+                    content: `You are a helpful and friendly assistant. 
+                    Engage in a natural conversation with the user, responding to their questions and comments.
+                    Keep responses concise and relevant to the ongoing conversation.
+                    
+                    Format your responses using simple Markdown for better readability:
+                    - Use *asterisks* for bold text (important information, headings)
+                    - Use _underscores_ for italic text (emphasis)
+                    - Use \`backticks\` for code or technical terms
+                    - Use bullet points for lists
+                    
+                    IMPORTANT: For headings, use *bold text* instead of # symbols. Telegram doesn't support # for headings.
+                    Example: Use "*Heading*" instead of "# Heading"
+                    
+                    Use only basic Markdown formatting. Do NOT use backslashes to escape characters.`
+                },
+                ...conversationHistory.map((msg) => ({
+                    role: msg.role === "user" ? ("user" as const) : ("assistant" as const),
+                    content: msg.content
+                }))
+            ];
+
+            // Add the current user message if it's not already in the history
+            if (
+                conversationHistory.length === 0 ||
+                conversationHistory[conversationHistory.length - 1].role !== "user"
+            ) {
+                messages.push({
+                    role: "user" as const,
+                    content: userMessage
+                });
+            }
+
+            const response = await this.client.chat.completions.create({
+                model: "gpt-4o-mini",
+                max_tokens: 1024,
+                messages
+            });
+
+            return response.choices[0]?.message?.content || "";
+        } catch (error) {
+            logger.error("Error generating conversational response with OpenAI:", error);
+            throw new Error("Failed to generate conversational response");
+        }
+    }
 }
 
 export const openaiService = new OpenAIService();

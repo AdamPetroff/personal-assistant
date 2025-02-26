@@ -1,6 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import { TELEGRAM_BOT_TOKEN } from "../config/constants";
 import { handleMessage } from "./handlers/messageHandler";
+import { handleReply } from "./handlers/replyHandler";
 import { logger } from "../utils/logger";
 import { initTrelloService, interestsListId } from "../services/trello";
 import { CoinMarketCapService, initCoinMarketCapService } from "../services/coinMarketCap";
@@ -8,10 +9,35 @@ import cron from "node-cron";
 import { OpenAIService } from "../services/openai";
 import { initWalletService } from "../services/wallet";
 import { createMarkdownSender } from "../utils/markdownFormatter";
+import { conversationContextService } from "../services/conversationContext";
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 // Create a wrapper for sendMessage with Markdown support (using simpler Markdown mode)
 const sendMarkdownMessage = createMarkdownSender(bot, false);
+
+// Enhanced version of sendMarkdownMessage that also stores the message in conversation context
+const sendAndTrackMarkdownMessage = async (
+    chatId: number | string,
+    text: string,
+    options: any = {},
+    originalMessageId?: number
+) => {
+    try {
+        const sentMessage = await sendMarkdownMessage(chatId, text, options);
+
+        // If this is part of a conversation, store it in the conversation context
+        if (originalMessageId) {
+            // Get the bot's ID first, then add the message
+            const botInfo = await bot.getMe();
+            conversationContextService.addMessage(originalMessageId, sentMessage.message_id, botInfo.id, true, text);
+        }
+
+        return sentMessage;
+    } catch (error) {
+        logger.error("Error sending and tracking message:", error);
+        throw error;
+    }
+};
 
 bot.on("polling_error", (error) => {
     logger.error("Polling error:", error);
@@ -124,7 +150,19 @@ scheduledMessages.forEach((schedule) => {
                         return;
                     }
                     // Use the markdown sender with the message as-is (no escaping)
-                    await sendMarkdownMessage(chatId, message);
+                    const sentMessage = await sendMarkdownMessage(chatId, message);
+
+                    // Store the sent message in the conversation context
+                    // Use the message ID as the original message ID (conversation thread ID)
+                    const botInfo = await bot.getMe();
+                    conversationContextService.addMessage(
+                        sentMessage.message_id, // Original message ID (conversation thread ID)
+                        sentMessage.message_id, // Message ID
+                        botInfo.id, // Bot ID
+                        true, // Is bot
+                        message // Message text
+                    );
+
                     logger.info(`Scheduled message sent to ${chatId}`);
                 } catch (error) {
                     logger.error(`Failed to send scheduled message to ${chatId}:`, error);
@@ -137,12 +175,61 @@ scheduledMessages.forEach((schedule) => {
     );
 });
 
-bot.on("message", async (ctx) => {
-    // Process the user's message
-    const response = await handleMessage(ctx.text || "");
+bot.on("message", async (msg) => {
+    try {
+        // Check if this is a reply to a message
+        if (msg.reply_to_message) {
+            const fromId = msg.from?.id || 0;
+            logger.info(`Received reply to message ${msg.reply_to_message.message_id} from ${fromId}`);
 
-    // Use the markdown sender with the response as-is (no escaping)
-    await sendMarkdownMessage(ctx.chat.id, response);
+            // Process the reply
+            const { response, threadId } = await handleReply(msg.reply_to_message.message_id, msg.text || "", fromId);
+
+            // Send the response as a reply to the user's message
+            await sendAndTrackMarkdownMessage(
+                msg.chat.id,
+                response,
+                { reply_to_message_id: msg.message_id },
+                threadId // Use the thread ID instead of the reply_to_message_id
+            );
+        } else {
+            // Process the user's message as a regular message
+            const fromId = msg.from?.id || 0;
+            logger.info(`Received message from ${fromId}: ${msg.text}`);
+            const response = await handleMessage(msg.text || "");
+
+            // Send the response
+            const sentMessage = await sendMarkdownMessage(msg.chat.id, response);
+
+            // Store both the user's message and the bot's response in the conversation context
+            // This allows future replies to have context
+            const botInfo = await bot.getMe();
+
+            // Store the user's message
+            conversationContextService.addMessage(
+                sentMessage.message_id, // Original message ID (conversation thread ID)
+                msg.message_id, // Message ID
+                fromId, // User ID
+                false, // Not a bot
+                msg.text || "" // Message text
+            );
+
+            // Store the bot's response
+            conversationContextService.addMessage(
+                sentMessage.message_id, // Original message ID (conversation thread ID)
+                sentMessage.message_id, // Message ID
+                botInfo.id, // Bot ID
+                true, // Is bot
+                response // Message text
+            );
+        }
+    } catch (error) {
+        logger.error("Error processing message:", error);
+        await sendMarkdownMessage(
+            msg.chat.id,
+            "Sorry, I encountered an error processing your message. Please try again."
+        );
+    }
 });
 
 bot.on("error", (error) => {
