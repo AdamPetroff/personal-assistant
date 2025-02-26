@@ -79,7 +79,7 @@ export class BinanceService {
             return response.data;
         } catch (error) {
             logger.error("Failed to fetch Binance account info:", error);
-            throw new Error("Failed to fetch Binance account info");
+            throw new Error(`Failed to fetch Binance account info: ${(error as Error).message}`);
         }
     }
 
