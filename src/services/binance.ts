@@ -4,6 +4,7 @@ import { logger } from "../utils/logger";
 import { env } from "../config/constants";
 import { openaiService } from "./openai";
 import { CoinMarketCapService } from "./coinMarketCap";
+import { exchangeRateService } from "./exchangeRate";
 import BigNumber from "bignumber.js";
 
 // Interface for Binance account balance
@@ -20,18 +21,8 @@ interface ProcessedBalance {
     valueUsd: number;
 }
 
-// Map of fiat currencies to their USD exchange rates
-// These will need to be updated periodically or fetched from an API
-const FIAT_USD_RATES: Record<string, number> = {
-    EUR: 1.08, // 1 EUR = 1.08 USD (approximate)
-    GBP: 1.27, // 1 GBP = 1.27 USD (approximate)
-    JPY: 0.0067, // 1 JPY = 0.0067 USD (approximate)
-    AUD: 0.66, // 1 AUD = 0.66 USD (approximate)
-    CAD: 0.74, // 1 CAD = 0.74 USD (approximate)
-    CHF: 1.13, // 1 CHF = 1.13 USD (approximate)
-    CNY: 0.14, // 1 CNY = 0.14 USD (approximate)
-    RUB: 0.011 // 1 RUB = 0.011 USD (approximate)
-};
+// List of supported fiat currencies
+const SUPPORTED_FIAT_CURRENCIES = ["EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY", "RUB", "CZK"];
 
 export class BinanceService {
     private readonly apiKey: string;
@@ -87,19 +78,20 @@ export class BinanceService {
      * Check if an asset is a fiat currency
      */
     private isFiatCurrency(asset: string): boolean {
-        return Object.keys(FIAT_USD_RATES).includes(asset);
+        return SUPPORTED_FIAT_CURRENCIES.includes(asset);
     }
 
     /**
      * Get USD value for a fiat currency
      */
-    private getFiatUsdValue(asset: string, amount: BigNumber): number {
-        const rate = FIAT_USD_RATES[asset];
-        if (!rate) {
-            logger.warn(`No USD conversion rate found for fiat currency: ${asset}`);
+    private async getFiatUsdValue(asset: string, amount: BigNumber): Promise<number> {
+        try {
+            const convertedAmount = await exchangeRateService.convertCurrency(amount, asset, "USD");
+            return convertedAmount.toNumber();
+        } catch (error) {
+            logger.warn(`Failed to convert ${asset} to USD: ${error}`);
             return 0;
         }
-        return amount.times(rate).toNumber();
     }
 
     /**
@@ -137,7 +129,7 @@ export class BinanceService {
 
             // Process fiat currencies
             for (const { asset, total } of fiatBalances) {
-                const valueUsd = this.getFiatUsdValue(asset, total);
+                const valueUsd = await this.getFiatUsdValue(asset, total);
                 if (valueUsd >= this.minUsdValueToShow) {
                     processedBalances.push({
                         asset,
@@ -156,7 +148,7 @@ export class BinanceService {
                     // Fetch all prices in a single API call
                     const tokenPrices = await this.coinMarketCapService.getMultipleTokenPrices(symbols);
 
-                    // Process each token with the fetched prices
+                    // Process each token with its price
                     for (const { asset, total } of cryptoBalances) {
                         const priceData = tokenPrices[asset.toUpperCase()];
 
@@ -170,21 +162,18 @@ export class BinanceService {
                                     valueUsd
                                 });
                             }
-                        } else {
-                            logger.warn(`No price data found for ${asset}`);
                         }
                     }
                 } catch (error) {
-                    logger.error("Failed to fetch batch prices:", error);
-                    // If batch request fails, we won't add any crypto tokens
+                    logger.error("Failed to fetch crypto prices:", error);
                 }
             }
 
             // Sort by USD value (descending)
             return processedBalances.sort((a, b) => b.valueUsd - a.valueUsd);
         } catch (error) {
-            logger.error("Failed to process Binance balances:", error);
-            throw new Error("Failed to process Binance balances");
+            logger.error("Failed to get Binance balances:", error);
+            return [];
         }
     }
 
@@ -199,23 +188,98 @@ export class BinanceService {
     /**
      * Format balance report for display
      */
-    formatBalanceReport(balances: ProcessedBalance[]): string {
+    formatBalanceReport(balances: ProcessedBalance[], displayCurrency: string = "USD"): string {
         const totalUsd = balances.reduce((sum, balance) => sum + balance.valueUsd, 0);
 
         let report = `*Binance Account Balance*\n\n`;
-        report += `*Total Value:* $${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n`;
+
+        // Format total value with currency symbol
+        const formattedTotal = exchangeRateService.formatCurrencyAmount(totalUsd, displayCurrency);
+        report += `*Total Value:* ${formattedTotal}\n\n`;
 
         report += "*Holdings:*\n";
         for (const balance of balances) {
-            const formattedValue = balance.valueUsd.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+            // Format the asset amount
             const formattedAmount = balance.total.toFixed(balance.total.isGreaterThan(100) ? 2 : 6);
-            report += `• ${balance.asset}: ${formattedAmount} ($${formattedValue})\n`;
+
+            // Format the USD value with currency symbol
+            const formattedValue = exchangeRateService.formatCurrencyAmount(balance.valueUsd, displayCurrency);
+
+            report += `• ${balance.asset}: ${formattedAmount} (${formattedValue})\n`;
         }
 
         return report;
+    }
+
+    /**
+     * Format balance report with multiple currencies
+     */
+    async formatMultiCurrencyReport(
+        balances: ProcessedBalance[],
+        currencies: string[] = ["USD", "EUR", "CZK"]
+    ): Promise<string> {
+        const totalUsd = balances.reduce((sum, balance) => sum + balance.valueUsd, 0);
+
+        let report = `*Binance Account Balance*\n\n`;
+
+        // Add total value in multiple currencies
+        report += "*Total Value:*\n";
+
+        for (const currency of currencies) {
+            try {
+                const convertedAmount = await exchangeRateService.convertCurrency(totalUsd, "USD", currency);
+                const formattedAmount = exchangeRateService.formatCurrencyAmount(convertedAmount, currency);
+                report += `• ${formattedAmount}\n`;
+            } catch (error) {
+                logger.warn(`Failed to convert total to ${currency}:`, error);
+            }
+        }
+
+        report += "\n*Holdings:*\n";
+
+        for (const balance of balances) {
+            // Format the asset amount
+            const formattedAmount = balance.total.toFixed(balance.total.isGreaterThan(100) ? 2 : 6);
+
+            // Format the value in primary currency (USD)
+            const primaryValue = exchangeRateService.formatCurrencyAmount(balance.valueUsd, "USD");
+
+            report += `• ${balance.asset}: ${formattedAmount} (${primaryValue})\n`;
+        }
+
+        return report;
+    }
+
+    /**
+     * Get total balance in a specific currency
+     */
+    async getTotalBalanceInCurrency(currency: string = "USD"): Promise<{
+        amount: number;
+        formatted: string;
+    }> {
+        try {
+            // Get total in USD first
+            const totalUsd = await this.getTotalBalanceUsd();
+
+            // If target currency is USD, no conversion needed
+            if (currency.toUpperCase() === "USD") {
+                return {
+                    amount: totalUsd,
+                    formatted: exchangeRateService.formatCurrencyAmount(totalUsd, "USD")
+                };
+            }
+
+            // Convert to target currency
+            const convertedAmount = await exchangeRateService.convertCurrency(totalUsd, "USD", currency);
+
+            return {
+                amount: convertedAmount.toNumber(),
+                formatted: exchangeRateService.formatCurrencyAmount(convertedAmount, currency)
+            };
+        } catch (error) {
+            logger.error(`Failed to get balance in ${currency}:`, error);
+            throw new Error(`Failed to get balance in ${currency}`);
+        }
     }
 }
 
