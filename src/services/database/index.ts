@@ -1,5 +1,8 @@
-import { PrismaClient, TaskStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { logger } from "../../utils/logger";
+
+// Define TaskStatus type locally to avoid build issues
+type TaskStatus = "TODO" | "DOING" | "DONE";
 
 // Initialize Prisma client
 const prisma = new PrismaClient();

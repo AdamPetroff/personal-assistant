@@ -41,6 +41,7 @@
         "dev": "concurrently \"fly proxy 5432 -a personal-assistant-db\" \"npm run dev:basic\" \"npm run prisma:studio\"",
         "start-ts": "ts-node src/index.ts",
         "start": "node dist/index.js",
+        "prebuild": "npx prisma generate",
         "build": "tsc",
         "migrate-data": "ts-node scripts/migrate-from-trello.ts",
         "prisma:studio": "npx prisma studio"

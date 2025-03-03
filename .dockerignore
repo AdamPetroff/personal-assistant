@@ -1,6 +1,13 @@
-/.git
-/node_modules
-.dockerignore
+node_modules
+npm-debug.log
+.git
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Don't ignore prisma directory
+# prisma
+.dockerignore
 Dockerfile
 fly.toml
