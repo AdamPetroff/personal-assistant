@@ -62,7 +62,7 @@ export class OpenAIService {
                         content: `You are a personal task management assistant. Parse user messages to determine their intent:
                         ${this.tools.map((tool) => `- If they want to ${tool.function.description}, use ${tool.function.name}`).join("\n")}
                         Extract relevant dates, times, and descriptions from their message.
-                        Respond with a single tool call that best matches their intent.`
+                        Respond with a single tool call that best matches their intent. It's currently ${new Date().toISOString()}.`
                     },
                     {
                         role: "user",

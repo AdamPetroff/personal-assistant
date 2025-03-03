@@ -1,8 +1,8 @@
 # syntax = docker/dockerfile:1
 
-# Adjust NODE_VERSION as desired
+# Use Debian bullseye which has OpenSSL 3.0.x
 ARG NODE_VERSION=20.18.0
-FROM node:${NODE_VERSION}-slim AS base
+FROM node:${NODE_VERSION}-bullseye-slim AS base
 
 LABEL fly_launch_runtime="Node.js"
 
@@ -18,7 +18,7 @@ FROM base AS build
 
 # Install packages needed to build node modules
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
+    apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3 openssl
 
 # Install node modules
 COPY package.json ./
@@ -26,9 +26,6 @@ RUN npm install --include=dev
 
 # Copy application code
 COPY . .
-
-# Generate Prisma client
-RUN npx prisma generate
 
 # Build application
 RUN npm run build
@@ -44,5 +41,5 @@ FROM base
 COPY --from=build /app /app
 
 # Start the server by default, this can be overwritten at runtime
-EXPOSE 3000
+EXPOSE 80
 CMD [ "npm", "run", "start" ]

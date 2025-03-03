@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 import { cleanEnv, str, bool } from "envalid";
-import { PrismaClient } from "@prisma/client";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -40,9 +39,6 @@ export const env = cleanEnv(process.env, {
     EXCHANGE_RATE_API_KEY: str({ default: "" }),
     EXCHANGE_RATE_API_FREE: bool({ default: true })
 });
-
-// Initialize Prisma client
-export const prisma = new PrismaClient();
 
 // Export constants
 export const TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;

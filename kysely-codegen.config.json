@@ -1,0 +1,5 @@
+{
+    "dialect": "postgres",
+    "camelCase": true,
+    "schema": "public"
+}

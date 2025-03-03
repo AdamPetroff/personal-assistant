@@ -2,11 +2,8 @@ import axios from "axios";
 import { logger } from "../utils/logger";
 import { env } from "../config/constants";
 import { openaiService } from "./openai";
+import { databaseService } from "./database";
 
-const todoListId = "675a0dd51091fad3e2ebdcf1";
-const doingListId = "675a0dd555a79cada51dd102";
-const doneListId = "675a0dd571d291845551064d";
-const remindersListId = "6781aeadda90c1ca4fb7e2ab";
 export const interestsListId = "6781af478a024f11a93b752d";
 
 interface TrelloConfig {
@@ -244,13 +241,7 @@ export function initTrelloService() {
                 }
             },
             handler: async (parameters) => {
-                const remindersListId = "675a0dd51091fad3e2ebdcf2"; // TODO: Make this configurable
-                return trelloService.createCard(
-                    remindersListId,
-                    parameters.title,
-                    "Reminder",
-                    new Date(parameters.reminderTime)
-                );
+                return databaseService.createReminder(parameters.title, new Date(parameters.reminderTime));
             }
         })
         .registerTool({
@@ -276,12 +267,12 @@ export function initTrelloService() {
                 }
             },
             handler: async (parameters) => {
-                const cards = await trelloService.getCardsInList(todoListId);
+                const cards = await databaseService.getTasks();
 
                 // Filter cards based on type and date if provided
-                return cards.filter((card) => {
-                    if (parameters.date && card.due) {
-                        const cardDate = new Date(card.due).toISOString().split("T")[0];
+                const tasks = cards.filter((card) => {
+                    if (parameters.date && card.dueDate) {
+                        const cardDate = card.dueDate.toISOString().split("T")[0];
                         if (cardDate !== parameters.date) {
                             return false;
                         }
@@ -290,9 +281,22 @@ export function initTrelloService() {
                     if (parameters.type === "all") return true;
 
                     // Assuming cards in the reminders list are reminders
-                    const isReminder = card.idList === "675a0dd51091fad3e2ebdcf2";
-                    return parameters.type === "reminders" ? isReminder : !isReminder;
+                    return parameters.type === "reminders" ? false : false;
                 });
+
+                const reminders = await databaseService.getReminders(false);
+
+                const filteredReminders = reminders.filter((reminder) => {
+                    if (parameters.date && reminder.reminderTime) {
+                        const reminderDate = reminder.reminderTime.toISOString().split("T")[0];
+                        if (reminderDate !== parameters.date) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+
+                return [...tasks, ...filteredReminders];
             }
         })
         .registerTool({
