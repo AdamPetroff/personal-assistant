@@ -27,6 +27,8 @@ primary_region = 'waw'
 # and doesn't need to be specified here
 
 # Mount the PostgreSQL volume (after creating it with fly CLI)
-[mounts]
+[[mounts]]
   source = "postgres_data"
   destination = "/data"
+  processes = ["app"]
+  regions = ["waw"]  # Only use the volume in Warsaw region

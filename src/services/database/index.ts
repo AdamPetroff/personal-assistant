@@ -1,11 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { DB, Taskstatus } from "./db";
 import { logger } from "../../utils/logger";
-
-// Define TaskStatus type locally to avoid build issues
-type TaskStatus = "TODO" | "DOING" | "DONE";
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
+import { db } from "./client";
 
 export class DatabaseService {
     /**
@@ -13,14 +8,21 @@ export class DatabaseService {
      */
     async createTask(title: string, description?: string, dueDate?: Date) {
         try {
-            return await prisma.task.create({
-                data: {
-                    title,
-                    description,
-                    status: "TODO",
-                    dueDate
-                }
-            });
+            const newTask = {
+                title,
+                description: description || null,
+                status: "TODO" as const,
+                dueDate: dueDate || null,
+                updatedAt: new Date()
+            };
+
+            const result = await db
+                .insertInto("task")
+                .values(newTask)
+                .returning(["id", "title", "description", "status", "dueDate", "createdAt", "updatedAt"])
+                .executeTakeFirstOrThrow();
+
+            return result;
         } catch (error) {
             logger.error("Failed to create task:", error);
             throw new Error("Failed to create task in database");
@@ -30,12 +32,15 @@ export class DatabaseService {
     /**
      * Get tasks with optional status filter
      */
-    async getTasks(status?: TaskStatus) {
+    async getTasks(status?: Taskstatus) {
         try {
-            return await prisma.task.findMany({
-                where: status ? { status } : undefined,
-                orderBy: { createdAt: "desc" }
-            });
+            let query = db.selectFrom("task").selectAll().orderBy("createdAt", "desc");
+
+            if (status) {
+                query = query.where("status", "=", status);
+            }
+
+            return await query.execute();
         } catch (error) {
             logger.error("Failed to fetch tasks:", error);
             throw new Error("Failed to fetch tasks from database");
@@ -45,12 +50,21 @@ export class DatabaseService {
     /**
      * Update a task's status
      */
-    async updateTaskStatus(taskId: string, status: TaskStatus) {
+    async updateTaskStatus(taskId: string, status: Taskstatus) {
         try {
-            return await prisma.task.update({
-                where: { id: taskId },
-                data: { status }
-            });
+            const updateData = {
+                status,
+                updatedAt: new Date()
+            };
+
+            const result = await db
+                .updateTable("task")
+                .set(updateData)
+                .where("id", "=", taskId)
+                .returning(["id", "title", "description", "status", "dueDate", "createdAt", "updatedAt"])
+                .executeTakeFirstOrThrow();
+
+            return result;
         } catch (error) {
             logger.error("Failed to update task status:", error);
             throw new Error("Failed to update task status in database");
@@ -63,10 +77,19 @@ export class DatabaseService {
     async updateTaskCompletion(taskId: string, isComplete: boolean) {
         try {
             const status = isComplete ? "DONE" : "TODO";
-            return await prisma.task.update({
-                where: { id: taskId },
-                data: { status }
-            });
+            const updateData = {
+                status: status as Taskstatus,
+                updatedAt: new Date()
+            };
+
+            const result = await db
+                .updateTable("task")
+                .set(updateData)
+                .where("id", "=", taskId)
+                .returning(["id", "title", "description", "status", "dueDate", "createdAt", "updatedAt"])
+                .executeTakeFirstOrThrow();
+
+            return result;
         } catch (error) {
             logger.error("Failed to update task completion status:", error);
             throw new Error("Failed to update task completion status");
@@ -78,9 +101,7 @@ export class DatabaseService {
      */
     async deleteTask(taskId: string) {
         try {
-            await prisma.task.delete({
-                where: { id: taskId }
-            });
+            await db.deleteFrom("task").where("id", "=", taskId).execute();
         } catch (error) {
             logger.error("Failed to delete task:", error);
             throw new Error("Failed to delete task from database");
@@ -92,14 +113,21 @@ export class DatabaseService {
      */
     async createReminder(title: string, reminderTime: Date, description?: string) {
         try {
-            return await prisma.reminder.create({
-                data: {
-                    title,
-                    description,
-                    reminderTime,
-                    completed: false
-                }
-            });
+            const newReminder = {
+                title,
+                description: description || null,
+                reminderTime,
+                completed: false,
+                updatedAt: new Date()
+            };
+
+            const result = await db
+                .insertInto("reminder")
+                .values(newReminder)
+                .returning(["id", "title", "description", "reminderTime", "completed", "createdAt", "updatedAt"])
+                .executeTakeFirstOrThrow();
+
+            return result;
         } catch (error) {
             logger.error("Failed to create reminder:", error);
             throw new Error("Failed to create reminder in database");
@@ -111,10 +139,13 @@ export class DatabaseService {
      */
     async getReminders(completed?: boolean) {
         try {
-            return await prisma.reminder.findMany({
-                where: completed !== undefined ? { completed } : undefined,
-                orderBy: { reminderTime: "asc" }
-            });
+            let query = db.selectFrom("reminder").selectAll().orderBy("reminderTime", "asc");
+
+            if (completed !== undefined) {
+                query = query.where("completed", "=", completed);
+            }
+
+            return await query.execute();
         } catch (error) {
             logger.error("Failed to fetch reminders:", error);
             throw new Error("Failed to fetch reminders from database");
@@ -126,10 +157,19 @@ export class DatabaseService {
      */
     async updateReminderCompletion(reminderId: string, completed: boolean) {
         try {
-            return await prisma.reminder.update({
-                where: { id: reminderId },
-                data: { completed }
-            });
+            const updateData = {
+                completed,
+                updatedAt: new Date()
+            };
+
+            const result = await db
+                .updateTable("reminder")
+                .set(updateData)
+                .where("id", "=", reminderId)
+                .returning(["id", "title", "description", "reminderTime", "completed", "createdAt", "updatedAt"])
+                .executeTakeFirstOrThrow();
+
+            return result;
         } catch (error) {
             logger.error("Failed to update reminder completion status:", error);
             throw new Error("Failed to update reminder completion status");
@@ -141,9 +181,7 @@ export class DatabaseService {
      */
     async deleteReminder(reminderId: string) {
         try {
-            await prisma.reminder.delete({
-                where: { id: reminderId }
-            });
+            await db.deleteFrom("reminder").where("id", "=", reminderId).execute();
         } catch (error) {
             logger.error("Failed to delete reminder:", error);
             throw new Error("Failed to delete reminder from database");
@@ -155,12 +193,19 @@ export class DatabaseService {
      */
     async createInterest(topic: string, description?: string) {
         try {
-            return await prisma.interest.create({
-                data: {
-                    topic,
-                    description
-                }
-            });
+            const newInterest = {
+                topic,
+                description: description || null,
+                updatedAt: new Date()
+            };
+
+            const result = await db
+                .insertInto("interest")
+                .values(newInterest)
+                .returning(["id", "topic", "description", "createdAt", "updatedAt"])
+                .executeTakeFirstOrThrow();
+
+            return result;
         } catch (error) {
             logger.error("Failed to create interest:", error);
             throw new Error("Failed to create interest in database");
@@ -172,9 +217,7 @@ export class DatabaseService {
      */
     async getInterests() {
         try {
-            return await prisma.interest.findMany({
-                orderBy: { createdAt: "desc" }
-            });
+            return await db.selectFrom("interest").selectAll().orderBy("createdAt", "desc").execute();
         } catch (error) {
             logger.error("Failed to fetch interests:", error);
             throw new Error("Failed to fetch interests from database");
@@ -186,9 +229,7 @@ export class DatabaseService {
      */
     async deleteInterest(interestId: string) {
         try {
-            await prisma.interest.delete({
-                where: { id: interestId }
-            });
+            await db.deleteFrom("interest").where("id", "=", interestId).execute();
         } catch (error) {
             logger.error("Failed to delete interest:", error);
             throw new Error("Failed to delete interest from database");

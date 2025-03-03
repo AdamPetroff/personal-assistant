@@ -6,8 +6,8 @@
     "dependencies": {
         "@anthropic-ai/sdk": "^0.32.1",
         "@linear/sdk": "^2.6.0",
-        "@prisma/client": "^6.4.1",
         "@types/node-cron": "^3.0.11",
+        "@types/pg": "^8.11.11",
         "@typescript-eslint/eslint-plugin": "^8.18.0",
         "axios": "^1.7.9",
         "bignumber.js": "^9.1.2",
@@ -15,10 +15,11 @@
         "envalid": "^8.0.0",
         "eslint": "^9.16.0",
         "express": "^4.21.1",
+        "kysely": "^0.27.6",
         "node-cron": "^3.0.3",
         "node-telegram-bot-api": "^0.64.0",
         "openai": "^4.76.1",
-        "prisma": "^6.4.1",
+        "pg": "^8.13.3",
         "twilio": "^5.3.7",
         "winston": "^3.11.0"
     },
@@ -27,6 +28,7 @@
         "@types/node": "latest",
         "@types/node-telegram-bot-api": "^0.64.2",
         "concurrently": "^9.1.2",
+        "kysely-codegen": "^0.18.2",
         "nodemon": "latest",
         "prettier": "latest",
         "prettify": "latest",
@@ -38,13 +40,14 @@
         "prettify": "pretty-quick --staged",
         "dev:basic": "nodemon src/index.ts",
         "dev:with-db": "concurrently \"fly proxy 5432 -a personal-assistant-db\" \"npm run dev:basic\"",
-        "dev": "concurrently \"fly proxy 5432 -a personal-assistant-db\" \"npm run dev:basic\" \"npm run prisma:studio\"",
+        "dev": "concurrently \"fly proxy 5432 -a personal-assistant-db\" \"npm run dev:basic\"",
         "start-ts": "ts-node src/index.ts",
         "start": "node dist/index.js",
-        "prebuild": "npx prisma generate",
         "build": "tsc",
-        "migrate-data": "ts-node scripts/migrate-from-trello.ts",
-        "prisma:studio": "npx prisma studio"
+        "generate-db-types": "kysely-codegen --out-file ./src/database/db.d.ts",
+        "migrate-up": "ts-node scripts/run-migrations.ts",
+        "migrate-down": "ts-node scripts/migrate-down.ts",
+        "db-proxy": "fly proxy 5432 -a personal-assistant-db --bind-addr 127.0.0.1"
     },
     "engines": {
         "node": ">=14.0.0"
