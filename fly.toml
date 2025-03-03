@@ -23,10 +23,8 @@ primary_region = 'waw'
   memory_mb = 1024
 
 # Database configuration
-# Note: The actual PostgreSQL instance is created via Fly CLI
-# This section defines environment variables for database connection
-[env]
-  DATABASE_URL = "postgres://{username}:{password}@{hostname}:5432/{database}?sslmode=disable"
+# Note: The DATABASE_URL is automatically set by the 'fly postgres attach' command
+# and doesn't need to be specified here
 
 # Mount the PostgreSQL volume (after creating it with fly CLI)
 [mounts]
