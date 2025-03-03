@@ -6,6 +6,7 @@ import express from "express";
 import { CoinMarketCapService, initCoinMarketCapService } from "./services/coinMarketCap";
 import { initWalletService } from "./services/wallet";
 import { initBinanceService } from "./services/binance";
+import { registerCurrencyConversionIntent } from "./services/openai";
 
 async function startApp() {
     try {
@@ -14,6 +15,9 @@ async function startApp() {
         const coinMarketCapService = new CoinMarketCapService();
         const walletService = initWalletService(coinMarketCapService);
         const binanceService = initBinanceService(coinMarketCapService);
+
+        // Register AI intents
+        registerCurrencyConversionIntent();
 
         // Start the bot
         await bot.startPolling();

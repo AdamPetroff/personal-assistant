@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { cleanEnv, str } from "envalid";
+import { cleanEnv, str, bool } from "envalid";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -30,7 +30,11 @@ export const env = cleanEnv(process.env, {
 
     // Binance API credentials
     BINANCE_API_KEY: str({ default: "" }),
-    BINANCE_API_SECRET: str({ default: "" })
+    BINANCE_API_SECRET: str({ default: "" }),
+
+    // Exchange Rate API credentials
+    EXCHANGE_RATE_API_KEY: str({ default: "" }),
+    EXCHANGE_RATE_API_FREE: bool({ default: true })
 });
 
 // Export constants
