@@ -27,6 +27,27 @@ export function escapeMarkdown(text: string): string {
 }
 
 /**
+ * Formats URLs for MarkdownV2 by properly escaping special characters in URLs
+ * @param text Text that may contain URLs
+ * @returns Text with properly formatted URLs for MarkdownV2
+ */
+export function formatUrlsForMarkdownV2(text: string): string {
+    if (!text) return "";
+
+    // This regex matches URLs starting with http:// or https://
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    return text.replace(urlRegex, (url) => {
+        // For MarkdownV2, we need to escape special characters in the URL
+        // but in a specific way that works with Telegram's parser
+        const escapedUrl = url.replace(/([_*[\]()~`>#+\-=|{}.!])/g, "\\$1");
+
+        // Create a proper markdown link with the URL as both the text and the target
+        return `[${escapedUrl}](${escapedUrl})`;
+    });
+}
+
+/**
  * Formats text as bold using Markdown
  * @param text Text to format as bold
  * @returns Text formatted as bold
@@ -99,6 +120,14 @@ export function processMarkdownForTelegram(text: string): string {
     // Convert headings to bold
     let processed = convertHeadingsToBold(text);
 
+    // Format URLs as proper Markdown links to prevent parsing issues
+    // This regex matches URLs starting with http:// or https://
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    processed = processed.replace(urlRegex, (url) => {
+        // Create a proper markdown link with the URL as both the text and the target
+        return `[${url}](${url})`;
+    });
+
     // Add other processing steps here if needed
 
     return processed;
@@ -118,7 +147,9 @@ export function createMarkdownSender(bot: any, useMarkdownV2: boolean = false) {
         // Process text based on the parse mode
         let processedText;
         if (useMarkdownV2) {
-            processedText = escapeMarkdown(text);
+            // For MarkdownV2, first format URLs then escape the rest
+            processedText = formatUrlsForMarkdownV2(text);
+            processedText = escapeMarkdown(processedText);
         } else {
             // For basic Markdown, convert headings to bold and perform other necessary transformations
             processedText = processMarkdownForTelegram(text);

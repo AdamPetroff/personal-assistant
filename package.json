@@ -5,6 +5,7 @@
     "description": "Describe your app here.",
     "dependencies": {
         "@anthropic-ai/sdk": "^0.32.1",
+        "@aws-sdk/client-s3": "^3.758.0",
         "@linear/sdk": "^2.6.0",
         "@types/node-cron": "^3.0.11",
         "@types/pg": "^8.11.11",
@@ -21,12 +22,14 @@
         "openai": "^4.76.1",
         "pg": "^8.13.3",
         "twilio": "^5.3.7",
+        "uuid": "^11.1.0",
         "winston": "^3.11.0"
     },
     "devDependencies": {
         "@types/express": "^5.0.0",
         "@types/node": "latest",
         "@types/node-telegram-bot-api": "^0.64.2",
+        "@types/uuid": "^10.0.0",
         "concurrently": "^9.1.2",
         "kysely-codegen": "^0.18.2",
         "nodemon": "latest",
@@ -46,7 +49,9 @@
         "generate-db-types": "kysely-codegen --out-file ./src/database/db.d.ts",
         "migrate-up": "ts-node scripts/run-migrations.ts",
         "migrate-down": "ts-node scripts/migrate-down.ts",
-        "db-proxy": "fly proxy 5432 -a personal-assistant-db --bind-addr 127.0.0.1"
+        "db-proxy": "fly proxy 5432 -a personal-assistant-db --bind-addr 127.0.0.1",
+        "storage-ui": "flyctl storage dashboard personal-assistant-storage",
+        "test-file-service": "ts-node scripts/test-file-service.ts"
     },
     "engines": {
         "node": ">=14.0.0"
