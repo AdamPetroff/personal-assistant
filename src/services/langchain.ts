@@ -1,33 +1,12 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
-import { RunnableSequence } from "@langchain/core/runnables";
 import { ChatMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { StructuredTool, DynamicStructuredTool } from "@langchain/core/tools";
-import { AgentExecutor, createOpenAIFunctionsAgent } from "langchain/agents";
-import { z } from "zod";
+import { StructuredTool } from "@langchain/core/tools";
 import { logger } from "../utils/logger";
 import { env } from "../config/constants";
 
-export type IntentHandler<SchemaType extends z.ZodObject<any>> = (parameters: z.infer<SchemaType>) => Promise<any>;
-
-export type ToolRegistration<SchemaType extends z.ZodObject<any>> = {
-    name: string;
-    description: string;
-    schema: SchemaType;
-    handler: IntentHandler<SchemaType>;
-};
-
-// Helper function to create a tool with type inference
-export function createTool<SchemaType extends z.ZodObject<any>>(
-    tool: ToolRegistration<SchemaType>
-): ToolRegistration<SchemaType> {
-    return tool;
-}
-
 export class LangchainService {
     private tools: StructuredTool[] = [];
-    private handlers: Map<string, IntentHandler<any>> = new Map();
+    private handlers: Map<string, (parameters: any) => Promise<any>> = new Map();
     private chatModel: ChatOpenAI;
 
     constructor() {
@@ -42,28 +21,21 @@ export class LangchainService {
         });
     }
 
-    registerTool(tool: ToolRegistration<any>) {
-        const structuredTool = new DynamicStructuredTool({
-            name: tool.name,
-            description: tool.description,
-            schema: tool.schema,
-            func: async (input: Record<string, any>) => {
+    registerTools(tools: StructuredTool[]) {
+        for (const tool of tools) {
+            this.tools.push(tool);
+            // Store the handler function for direct access
+            this.handlers.set(tool.name, async (parameters: any) => {
                 try {
-                    // Validate input against the Zod schema
-                    const validatedInput = tool.schema.parse(input);
-
-                    // Call the handler with validated input
-                    const result = await tool.handler(validatedInput);
-                    return JSON.stringify(result);
+                    // Call the tool with the parameters
+                    const result = await tool.invoke(parameters);
+                    return result;
                 } catch (error) {
                     logger.error(`Error executing tool ${tool.name}:`, error);
                     throw error;
                 }
-            }
-        });
-
-        this.tools.push(structuredTool);
-        this.handlers.set(tool.name, tool.handler);
+            });
+        }
         return this;
     }
 
