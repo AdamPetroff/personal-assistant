@@ -1,6 +1,7 @@
-import { langchainService, ToolRegistration, createTool } from "../services/langchain";
+import { langchainService } from "../services/langchain";
 import { logger } from "../utils/logger";
 import { z } from "zod";
+import { tool } from "@langchain/core/tools";
 
 /**
  * Example weather tool schema using Zod
@@ -13,14 +14,8 @@ const weatherSchema = z.object({
 /**
  * Example weather tool for testing the Langchain service
  */
-const weatherTool = createTool({
-    name: "get_weather",
-    description: "get the current weather in a given location",
-    schema: weatherSchema,
-    handler: async (parameters) => {
-        const location = parameters.location;
-        const unit = parameters.unit || "celsius";
-
+const weatherTool = tool(
+    async ({ location, unit = "celsius" }) => {
         // This is a mock implementation that would be replaced with a real API call
         logger.info(`Getting weather for ${location} in ${unit}`);
 
@@ -38,8 +33,13 @@ const weatherTool = createTool({
         };
 
         return mockWeatherData;
+    },
+    {
+        name: "get_weather",
+        description: "get the current weather in a given location",
+        schema: weatherSchema
     }
-});
+);
 
 /**
  * Example reminder tool schema using Zod
@@ -53,15 +53,8 @@ const reminderSchema = z.object({
 /**
  * Example reminder tool for testing the Langchain service
  */
-const reminderTool = createTool({
-    name: "set_reminder",
-    description: "set a reminder for a specific time",
-    schema: reminderSchema,
-    handler: async (parameters) => {
-        const task = parameters.task;
-        const time = parameters.time;
-        const priority = parameters.priority || "medium";
-
+const reminderTool = tool(
+    async ({ task, time, priority = "medium" }) => {
         // This is a mock implementation that would be replaced with a real reminder service
         logger.info(`Setting reminder for "${task}" at ${time} with ${priority} priority`);
 
@@ -79,8 +72,13 @@ const reminderTool = createTool({
                 created: new Date().toISOString()
             }
         };
+    },
+    {
+        name: "set_reminder",
+        description: "set a reminder for a specific time",
+        schema: reminderSchema
     }
-});
+);
 
 /**
  * Example calculator tool schema using Zod
@@ -94,13 +92,8 @@ const calculatorSchema = z.object({
 /**
  * Example calculator tool for testing the Langchain service
  */
-const calculatorTool = createTool({
-    name: "calculator",
-    description: "perform mathematical operations",
-    schema: calculatorSchema,
-    handler: async (parameters) => {
-        const { operation, number1, number2 } = parameters;
-
+const calculatorTool = tool(
+    async ({ operation, number1, number2 }) => {
         logger.info(`Performing ${operation} on ${number1} and ${number2}`);
 
         let result: number;
@@ -130,18 +123,24 @@ const calculatorTool = createTool({
             number2,
             result
         };
+    },
+    {
+        name: "calculator",
+        description: "perform mathematical operations",
+        schema: calculatorSchema
     }
-});
+);
 
 /**
  * Main function to test the Langchain service
  */
 async function testLangchainService() {
     try {
-        // Register the tools directly with the service
-        langchainService.registerTool(weatherTool);
-        langchainService.registerTool(reminderTool);
-        langchainService.registerTool(calculatorTool);
+        // Create an array of tools
+        const tools = [weatherTool, reminderTool, calculatorTool];
+
+        // Register all tools with the service
+        langchainService.registerTools(tools);
         logger.info("Registered tools with Langchain service");
 
         // Test messages to parse intents
