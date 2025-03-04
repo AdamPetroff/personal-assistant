@@ -1,0 +1,1 @@
+use the env const exported from src/config/constants.ts file to get environment variables.

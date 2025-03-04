@@ -8,6 +8,7 @@ import { initWalletService } from "./services/wallet";
 import { initBinanceService } from "./services/binance";
 import { registerCurrencyConversionIntent } from "./services/openai";
 import { testConnection } from "./services/database/client";
+import { fileService } from "./services/fileService";
 
 // Get port from environment variable or use default
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -26,6 +27,13 @@ async function startApp() {
         const coinMarketCapService = new CoinMarketCapService();
         const walletService = initWalletService(coinMarketCapService);
         const binanceService = initBinanceService(coinMarketCapService);
+
+        // Check file service configuration
+        if (fileService.isConfigured()) {
+            logger.info("File service initialized with S3 configuration");
+        } else {
+            logger.warn("File service initialized but S3 is not properly configured");
+        }
 
         // Register AI intents
         registerCurrencyConversionIntent();

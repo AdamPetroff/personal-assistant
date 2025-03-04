@@ -3,7 +3,7 @@ import { logger } from "../../utils/logger";
 
 export async function handleMessage(message: string) {
     if (!message) {
-        return "Please send a text message";
+        return "Please send a text message.";
     }
 
     try {

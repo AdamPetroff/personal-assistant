@@ -35,13 +35,36 @@ export const env = cleanEnv(process.env, {
     BINANCE_API_KEY: str({ default: "" }),
     BINANCE_API_SECRET: str({ default: "" }),
 
-    // Exchange Rate API credentials
+    // Exchange Rate API
     EXCHANGE_RATE_API_KEY: str({ default: "" }),
-    EXCHANGE_RATE_API_FREE: bool({ default: true })
+    EXCHANGE_RATE_API_FREE: bool({ default: true }),
+
+    // S3 Storage Configuration
+    AWS_ACCESS_KEY_ID: str({ default: "" }),
+    AWS_SECRET_ACCESS_KEY: str({ default: "" }),
+    AWS_ENDPOINT_URL_S3: str({ default: "" }),
+    AWS_REGION: str({ default: "auto" }),
+    BUCKET_NAME: str({ default: "" })
 });
 
-// Export constants
+// Export individual constants for easier access
 export const TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
+export const TRELLO_API_KEY = env.TRELLO_API_KEY;
+export const TRELLO_TOKEN = env.TRELLO_TOKEN;
+export const TRELLO_BOARD_ID = env.TRELLO_BOARD_ID;
+export const ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
+export const OPENAI_API_KEY = env.OPENAI_API_KEY;
+export const DATABASE_URL = env.DATABASE_URL;
+export const COIN_MARKET_CAP_API_KEY = env.COIN_MARKET_CAP_API_KEY;
+
+// S3 Storage Constants
+export const S3_CONFIG = {
+    accessKeyId: env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+    endpointUrl: env.AWS_ENDPOINT_URL_S3,
+    region: env.AWS_REGION,
+    bucketName: env.BUCKET_NAME
+};
 
 export const LINEAR_LABELS = {
     TASK: "task",
