@@ -6,6 +6,8 @@
     "dependencies": {
         "@anthropic-ai/sdk": "^0.32.1",
         "@aws-sdk/client-s3": "^3.758.0",
+        "@langchain/core": "^0.3.42",
+        "@langchain/openai": "^0.4.4",
         "@linear/sdk": "^2.6.0",
         "@types/node-cron": "^3.0.11",
         "@types/pg": "^8.11.11",
@@ -17,13 +19,15 @@
         "eslint": "^9.16.0",
         "express": "^4.21.1",
         "kysely": "^0.27.6",
+        "langchain": "^0.3.19",
         "node-cron": "^3.0.3",
         "node-telegram-bot-api": "^0.64.0",
         "openai": "^4.76.1",
         "pg": "^8.13.3",
         "twilio": "^5.3.7",
         "uuid": "^11.1.0",
-        "winston": "^3.11.0"
+        "winston": "^3.11.0",
+        "zod": "^3.24.2"
     },
     "devDependencies": {
         "@types/express": "^5.0.0",
@@ -51,7 +55,8 @@
         "migrate-down": "ts-node scripts/migrate-down.ts",
         "db-proxy": "fly proxy 5432 -a personal-assistant-db --bind-addr 127.0.0.1",
         "storage-ui": "flyctl storage dashboard personal-assistant-storage",
-        "test-file-service": "ts-node scripts/test-file-service.ts"
+        "test-file-service": "ts-node scripts/test-file-service.ts",
+        "test-langchain": "ts-node src/scripts/test-langchain.ts"
     },
     "engines": {
         "node": ">=14.0.0"
