@@ -1,6 +1,9 @@
 import axios from "axios";
 import { logger } from "../utils/logger";
 import { openaiService } from "./openai";
+import { langchainService } from "./langchain";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
 interface CoinMarketCapQuote {
     data: {
@@ -150,6 +153,29 @@ export class CoinMarketCapService {
 export function initCoinMarketCapService() {
     const coinMarketCapService = new CoinMarketCapService();
 
+    // Create LangChain tool for crypto price
+    const cryptoPriceTool = tool(
+        async ({ symbol }) => {
+            try {
+                const { price, change24h } = await coinMarketCapService.getTokenPrice(symbol.toUpperCase());
+                return coinMarketCapService.formatPriceMessage(symbol.toUpperCase(), price, change24h);
+            } catch (error) {
+                logger.error(`Error fetching price for ${symbol}:`, error);
+                return `Sorry, I couldn't fetch the price for ${symbol}. The symbol may be invalid or there might be an issue with the API.`;
+            }
+        },
+        {
+            name: "get_crypto_price",
+            description: "Get the current price and 24h change of a cryptocurrency",
+            schema: z.object({
+                symbol: z.string().describe("The cryptocurrency symbol (e.g., BTC, ETH, SOL)")
+            })
+        }
+    );
+
+    // Register the tool with LangChain service
+    langchainService.registerTools([cryptoPriceTool]);
+
     // Register the capability with OpenAI service
     openaiService.registerTool({
         type: "function",
@@ -173,4 +199,6 @@ export function initCoinMarketCapService() {
             return coinMarketCapService.formatPriceMessage(symbol, price, change24h);
         }
     });
+
+    return coinMarketCapService;
 }
