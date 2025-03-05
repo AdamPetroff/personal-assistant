@@ -5,6 +5,9 @@ import { openaiService, registerTotalCryptoHoldingsIntent } from "./openai";
 import { CoinMarketCapService } from "./coinMarketCap";
 import { env } from "../config/constants";
 import { BinanceService, binanceService } from "./binance";
+import { langchainService } from "./langchain";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
 // Supported blockchain networks
 export enum BlockchainNetwork {
@@ -712,6 +715,35 @@ export function initWalletService(coinMarketCapService: CoinMarketCapService): W
             return walletService.formatWalletReport(walletData);
         }
     });
+
+    // Create a LangChain tool for wallet balance
+    const walletBalanceTool = tool(
+        async () => {
+            const walletData = await walletService.getAllWalletsValueUsd();
+            return walletService.formatWalletReport(walletData);
+        },
+        {
+            name: "get_wallet_balance",
+            description: "Get your crypto wallet balances across different blockchains",
+            schema: z.object({})
+        }
+    );
+
+    // Create a LangChain tool for total crypto holdings
+    const totalCryptoHoldingsTool = tool(
+        async () => {
+            const { formattedReport } = await getTotalCryptoHoldings(walletService);
+            return formattedReport;
+        },
+        {
+            name: "get_total_crypto_holdings",
+            description: "Get a summary of your total cryptocurrency holdings including Binance",
+            schema: z.object({})
+        }
+    );
+
+    // Register the tools with LangChain service
+    langchainService.registerTools([walletBalanceTool, totalCryptoHoldingsTool]);
 
     // Register the total holdings capability
     registerTotalCryptoHoldingsIntent(() => getTotalCryptoHoldings(walletService));

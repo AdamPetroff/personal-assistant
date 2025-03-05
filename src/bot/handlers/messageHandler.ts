@@ -1,4 +1,4 @@
-import { openaiService } from "../../services/openai";
+import { langchainService } from "../../services/langchain";
 import { logger } from "../../utils/logger";
 
 export async function handleMessage(message: string) {
@@ -7,14 +7,14 @@ export async function handleMessage(message: string) {
     }
 
     try {
-        // Use OpenAI service to parse intent
-        const { intent, intentDescription, parameters } = await openaiService.parseIntent(message);
+        // Use LangChain service to parse intent
+        const { intent, intentDescription, parameters } = await langchainService.parseIntent(message);
 
         // Execute the handler for this intent
-        const result = await openaiService.handleIntent(intent, parameters);
+        const result = await langchainService.handleIntent(intent, parameters);
 
         // Generate a user-friendly response
-        const response = await openaiService.generateResponse(intentDescription, parameters, { result });
+        const response = await langchainService.generateResponse(intent, parameters, { result });
         return response;
     } catch (error) {
         logger.error("Error handling message:", error);

@@ -6,6 +6,9 @@ import { openaiService } from "./openai";
 import { CoinMarketCapService } from "./coinMarketCap";
 import { exchangeRateService } from "./exchangeRate";
 import BigNumber from "bignumber.js";
+import { langchainService } from "./langchain";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
 // Interface for Binance account balance
 interface BinanceBalance {
@@ -289,6 +292,22 @@ let binanceServiceInstance: BinanceService | null = null;
 export function initBinanceService(coinMarketCapService: CoinMarketCapService): BinanceService {
     if (!binanceServiceInstance) {
         binanceServiceInstance = new BinanceService(coinMarketCapService);
+
+        // Create LangChain tool for Binance balance
+        const binanceBalanceTool = tool(
+            async () => {
+                const balances = await binanceServiceInstance!.getNonZeroBalances();
+                return binanceServiceInstance!.formatBalanceReport(balances);
+            },
+            {
+                name: "get_binance_balance",
+                description: "Get your Binance account balance and holdings",
+                schema: z.object({})
+            }
+        );
+
+        // Register the tool with LangChain service
+        langchainService.registerTools([binanceBalanceTool]);
 
         // Register the capability with OpenAI service
         openaiService.registerTool({

@@ -3,6 +3,9 @@ import { logger } from "../utils/logger";
 import { env } from "../config/constants";
 import { openaiService } from "./openai";
 import { databaseService } from "./database";
+import { langchainService } from "./langchain";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
 export const interestsListId = "6781af478a024f11a93b752d";
 
@@ -178,6 +181,8 @@ export class TrelloService {
     }
 }
 
+const todoListId = "675a0dd51091fad3e2ebdcf1"; // TODO: Make this configurable
+
 export function initTrelloService() {
     const trelloService = new TrelloService({
         apiKey: env.TRELLO_API_KEY,
@@ -188,6 +193,104 @@ export function initTrelloService() {
     // trelloService.getBoardLabels().then((lists) => {
     //     console.log(lists);
     // });
+
+    // Define the list IDs
+
+    // Create LangChain tools
+    const createTaskTool = tool(
+        async ({ title, description, dueDate }) => {
+            return trelloService.createCard(todoListId, title, description, dueDate ? new Date(dueDate) : undefined);
+        },
+        {
+            name: "create_task",
+            description: "Create a new task with optional due date",
+            schema: z.object({
+                title: z.string().describe("The title of the task"),
+                description: z.string().optional().describe("A detailed description of the task"),
+                dueDate: z.string().optional().describe("Optional ISO date string for when the task is due")
+            })
+        }
+    );
+
+    const createReminderTool = tool(
+        async ({ title, reminderTime }) => {
+            return databaseService.createReminder(title, new Date(reminderTime));
+        },
+        {
+            name: "create_reminder",
+            description: "Set a reminder for a specific date and time",
+            schema: z.object({
+                title: z.string().describe("What to be reminded about"),
+                reminderTime: z.string().describe("ISO date-time string for when to send the reminder")
+            })
+        }
+    );
+
+    const completeTaskTool = tool(
+        async ({ taskId }) => {
+            return trelloService.updateCardCompletion(taskId, true);
+        },
+        {
+            name: "complete_task",
+            description: "Mark a task as complete",
+            schema: z.object({
+                taskId: z.string().describe("The ID of the task to mark as complete")
+            })
+        }
+    );
+
+    const deleteTaskTool = tool(
+        async ({ taskId }) => {
+            await trelloService.deleteCard(taskId);
+            return { success: true, message: "Task deleted successfully" };
+        },
+        {
+            name: "delete_task",
+            description: "Delete a task",
+            schema: z.object({
+                taskId: z.string().describe("The ID of the task to delete")
+            })
+        }
+    );
+
+    const trackInterestTool = tool(
+        async ({ topic, description }) => {
+            await trelloService.createCard(interestsListId, topic, description);
+            return {
+                success: true,
+                message: "Interest added successfully. User will be notified with the details about the topic soon."
+            };
+        },
+        {
+            name: "track_interest_in_topic",
+            description: "Use when the user expresses curiosity or interest in learning more about a topic or subject",
+            schema: z.object({
+                topic: z.string().describe("The topic or interest to track"),
+                description: z.string().optional().describe("Additional details or context about the interest")
+            })
+        }
+    );
+
+    const getInterestsTool = tool(
+        async () => {
+            return trelloService.getCardsInList(interestsListId);
+        },
+        {
+            name: "get_interests",
+            description: "Retrieve all tracked interests",
+            schema: z.object({})
+        }
+    );
+
+    // Register all tools with LangChain service
+    langchainService.registerTools([
+        createTaskTool,
+        createReminderTool,
+        completeTaskTool,
+        deleteTaskTool,
+        trackInterestTool,
+        getInterestsTool
+    ]);
 
     openaiService
         .registerTool({
@@ -210,9 +313,8 @@ export function initTrelloService() {
                 }
             },
             handler: async (parameters) => {
-                const listId = "675a0dd51091fad3e2ebdcf1"; // TODO: Make this configurable
                 return trelloService.createCard(
-                    listId,
+                    todoListId,
                     parameters.title,
                     parameters.description,
                     parameters.dueDate ? new Date(parameters.dueDate) : undefined
