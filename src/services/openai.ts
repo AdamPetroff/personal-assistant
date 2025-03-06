@@ -1,7 +1,9 @@
 import OpenAI from "openai";
 import { logger } from "../utils/logger";
 import { env } from "../config/constants";
-import { exchangeRateService } from "./exchangeRate";
+import { langchainService } from "./langchain";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
 export type IntentHandler = (parameters: Record<string, any>) => Promise<any>;
 
@@ -226,78 +228,19 @@ export const openaiService = new OpenAIService();
 export function registerTotalCryptoHoldingsIntent(
     getTotalHoldingsFunction: () => Promise<{ totalUsd: number; formattedReport: string }>
 ) {
-    openaiService.registerTool({
-        type: "function",
-        function: {
-            name: "get_total_crypto_holdings",
-            description: "Get the total value of all your crypto holdings (Binance + wallets)",
-            parameters: {
-                type: "object",
-                properties: {},
-                required: []
-            }
-        },
-        handler: async () => {
+    // Create and register LangChain tool
+    const totalCryptoHoldingsTool = tool(
+        async () => {
             const { formattedReport } = await getTotalHoldingsFunction();
             return formattedReport;
-        }
-    });
-}
-
-/**
- * Register intent to get currency conversion rates
- */
-export function registerCurrencyConversionIntent() {
-    openaiService.registerTool({
-        type: "function",
-        function: {
-            name: "convert_currency",
-            description: "Convert an amount from one currency to another using real-time exchange rates",
-            parameters: {
-                type: "object",
-                properties: {
-                    amount: {
-                        type: "number",
-                        description: "The amount to convert"
-                    },
-                    from_currency: {
-                        type: "string",
-                        description: "The source currency code (e.g., USD, EUR, CZK)"
-                    },
-                    to_currency: {
-                        type: "string",
-                        description: "The target currency code (e.g., USD, EUR, CZK)"
-                    }
-                },
-                required: ["amount", "from_currency", "to_currency"]
-            }
         },
-        handler: async (parameters: Record<string, any>) => {
-            try {
-                const { amount, from_currency, to_currency } = parameters;
-
-                const convertedAmount = await exchangeRateService.convertCurrency(amount, from_currency, to_currency);
-
-                const formattedAmount = exchangeRateService.formatCurrencyAmount(convertedAmount, to_currency);
-
-                return {
-                    success: true,
-                    result: {
-                        original_amount: amount,
-                        original_currency: from_currency,
-                        converted_amount: convertedAmount.toNumber(),
-                        converted_currency: to_currency,
-                        formatted_result: formattedAmount
-                    }
-                };
-            } catch (error: unknown) {
-                const errorMessage = error instanceof Error ? error.message : String(error);
-                logger.error("Currency conversion failed:", error);
-                return {
-                    success: false,
-                    error: `Failed to convert currency: ${errorMessage}`
-                };
-            }
+        {
+            name: "get_total_crypto_holdings",
+            description: "Get the total value of all your crypto holdings (Binance + wallets)",
+            schema: z.object({})
         }
-    });
+    );
+
+    // Register with LangChain service
+    langchainService.registerTools([totalCryptoHoldingsTool]);
 }

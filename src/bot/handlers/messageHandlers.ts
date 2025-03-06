@@ -3,7 +3,6 @@ import { handleReply } from "./replyHandler";
 import { logger } from "../../utils/logger";
 import { conversationContextService } from "../../services/conversationContext";
 import TelegramBot from "node-telegram-bot-api";
-import { OpenAIService } from "../../services/openai";
 
 /**
  * Enhanced version of sendMarkdownMessage that also stores the message in conversation context
@@ -42,8 +41,7 @@ const createSendAndTrackMarkdownMessage = (
  */
 export function setupMessageHandlers(
     bot: TelegramBot,
-    sendMarkdownMessage: (chatId: number | string, text: string, options?: any) => Promise<TelegramBot.Message>,
-    openaiService: OpenAIService
+    sendMarkdownMessage: (chatId: number | string, text: string, options?: any) => Promise<TelegramBot.Message>
 ) {
     const sendAndTrackMarkdownMessage = createSendAndTrackMarkdownMessage(bot, sendMarkdownMessage);
 

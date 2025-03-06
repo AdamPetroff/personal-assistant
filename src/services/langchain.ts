@@ -59,6 +59,8 @@ export class LangchainService {
                 .map((tool) => `- If they want to ${tool.description}, use ${tool.name}`)
                 .join("\n");
 
+            console.log({ toolDescriptions });
+
             const systemPrompt = `You are a personal task management assistant. Parse user messages to determine their intent:
             ${toolDescriptions}
             Extract relevant dates, times, and descriptions from their message.

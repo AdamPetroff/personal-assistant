@@ -2,7 +2,6 @@ import axios from "axios";
 import crypto from "crypto";
 import { logger } from "../utils/logger";
 import { env } from "../config/constants";
-import { openaiService } from "./openai";
 import { CoinMarketCapService } from "./coinMarketCap";
 import { exchangeRateService } from "./exchangeRate";
 import BigNumber from "bignumber.js";
@@ -308,24 +307,6 @@ export function initBinanceService(coinMarketCapService: CoinMarketCapService): 
 
         // Register the tool with LangChain service
         langchainService.registerTools([binanceBalanceTool]);
-
-        // Register the capability with OpenAI service
-        openaiService.registerTool({
-            type: "function",
-            function: {
-                name: "get_binance_balance",
-                description: "Get your Binance account balance and holdings",
-                parameters: {
-                    type: "object",
-                    properties: {},
-                    required: []
-                }
-            },
-            handler: async () => {
-                const balances = await binanceServiceInstance!.getNonZeroBalances();
-                return binanceServiceInstance!.formatBalanceReport(balances);
-            }
-        });
     }
 
     return binanceServiceInstance;

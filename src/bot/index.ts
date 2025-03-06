@@ -2,6 +2,7 @@ import TelegramBot from "node-telegram-bot-api";
 import { TELEGRAM_BOT_TOKEN } from "../config/constants";
 import { logger } from "../utils/logger";
 import { initTrelloService } from "../services/trello";
+import { initRemindersService } from "../services/reminders";
 import { initCoinMarketCapService, CoinMarketCapService } from "../services/coinMarketCap";
 import { OpenAIService } from "../services/openai";
 import { initWalletService } from "../services/wallet";
@@ -19,9 +20,9 @@ const sendMarkdownMessage = createMarkdownSender(bot, false);
 
 // Initialize services
 initTrelloService();
+initRemindersService();
 initCoinMarketCapService();
 const coinMarketCapService = new CoinMarketCapService();
-const openaiService = new OpenAIService();
 const walletService = initWalletService(coinMarketCapService);
 
 // Set up error handling
@@ -40,9 +41,9 @@ bot.getMe().then((botInfo) => {
 });
 
 // Set up all handlers
-setupMessageHandlers(bot, sendMarkdownMessage, openaiService);
+setupMessageHandlers(bot, sendMarkdownMessage);
 setupFileHandlers(bot, sendMarkdownMessage);
 setupCommandHandlers(bot, sendMarkdownMessage);
-setupScheduledMessages(bot, sendMarkdownMessage, coinMarketCapService, openaiService, walletService);
+setupScheduledMessages(bot, sendMarkdownMessage, coinMarketCapService, walletService);
 
 export { bot, sendMarkdownMessage };

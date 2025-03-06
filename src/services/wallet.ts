@@ -1,10 +1,10 @@
 import axios from "axios";
 import BigNumber from "bignumber.js";
 import { logger } from "../utils/logger";
-import { openaiService, registerTotalCryptoHoldingsIntent } from "./openai";
+import { registerTotalCryptoHoldingsIntent } from "./openai";
 import { CoinMarketCapService } from "./coinMarketCap";
 import { env } from "../config/constants";
-import { BinanceService, binanceService } from "./binance";
+import { binanceService } from "./binance";
 import { langchainService } from "./langchain";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
@@ -697,25 +697,6 @@ async function getTotalCryptoHoldings(
 
 export function initWalletService(coinMarketCapService: CoinMarketCapService): WalletService {
     const walletService = new WalletService(coinMarketCapService);
-
-    // Register the wallet balance capability with OpenAI service
-    openaiService.registerTool({
-        type: "function",
-        function: {
-            name: "get_wallet_balance",
-            description: "Get your crypto wallet balances across different blockchains",
-            parameters: {
-                type: "object",
-                properties: {},
-                required: []
-            }
-        },
-        handler: async () => {
-            const walletData = await walletService.getAllWalletsValueUsd();
-            return walletService.formatWalletReport(walletData);
-        }
-    });
-
     // Create a LangChain tool for wallet balance
     const walletBalanceTool = tool(
         async () => {
