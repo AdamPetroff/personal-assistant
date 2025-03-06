@@ -2,6 +2,9 @@ import axios from "axios";
 import { logger } from "../utils/logger";
 import { env } from "../config/constants";
 import BigNumber from "bignumber.js";
+import { langchainService } from "./langchain";
+import { z } from "zod";
+import { tool } from "@langchain/core/tools";
 
 // Interface for exchange rate data
 export interface ExchangeRateData {
@@ -177,6 +180,37 @@ export class ExchangeRateService {
             return `${symbol}${formattedAmount}`;
         }
     }
+}
+
+/**
+ * Register intent to get currency conversion rates
+ */
+export function registerCurrencyConversionIntent() {
+    // Create and register LangChain tool
+    const currencyConversionTool = tool(
+        async ({ amount, from_currency, to_currency }) => {
+            try {
+                const convertedAmount = await exchangeRateService.convertCurrency(amount, from_currency, to_currency);
+
+                return `${amount} ${from_currency} = ${convertedAmount.toFixed(2)} ${to_currency}`;
+            } catch (error) {
+                logger.error("Error converting currency:", error);
+                return "Sorry, I couldn't convert the currency. Please check the currency codes and try again.";
+            }
+        },
+        {
+            name: "convert_currency",
+            description: "Convert an amount from one currency to another using real-time exchange rates",
+            schema: z.object({
+                amount: z.number().describe("The amount to convert"),
+                from_currency: z.string().describe("The source currency code (e.g., USD, EUR, CZK)"),
+                to_currency: z.string().describe("The target currency code (e.g., USD, EUR, CZK)")
+            })
+        }
+    );
+
+    // Register with LangChain service
+    langchainService.registerTools([currencyConversionTool]);
 }
 
 // Create and export singleton instance

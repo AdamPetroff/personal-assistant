@@ -1,6 +1,6 @@
 import { logger } from "../../utils/logger";
 import { conversationContextService } from "../../services/conversationContext";
-import { openaiService } from "../../services/openai";
+import { langchainService } from "../../services/langchain";
 
 /**
  * Handle a reply to a bot message
@@ -46,7 +46,7 @@ export async function handleReply(
         }
 
         // Generate a response based on the conversation history
-        const response = await openaiService.generateConversationalResponse(messageText, conversationHistory);
+        const response = await langchainService.generateConversationalResponse(messageText, conversationHistory);
 
         // Add the user's message and the bot's response to the conversation
         conversationContextService.addMessage(threadId, Date.now(), userId, false, messageText);

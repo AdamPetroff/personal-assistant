@@ -6,7 +6,7 @@ import express from "express";
 import { CoinMarketCapService, initCoinMarketCapService } from "./services/coinMarketCap";
 import { initWalletService } from "./services/wallet";
 import { initBinanceService } from "./services/binance";
-import { registerCurrencyConversionIntent } from "./services/openai";
+import { registerCurrencyConversionIntent } from "./services/exchangeRate";
 import { testConnection } from "./services/database/client";
 import { fileService } from "./services/fileService";
 

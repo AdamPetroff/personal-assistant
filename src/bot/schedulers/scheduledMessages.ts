@@ -3,8 +3,9 @@ import { logger } from "../../utils/logger";
 import { conversationContextService } from "../../services/conversationContext";
 import cron from "node-cron";
 import { CoinMarketCapService } from "../../services/coinMarketCap";
-import { OpenAIService } from "../../services/openai";
 import { initTrelloService, interestsListId } from "../../services/trello";
+import { remindersService } from "../../services/reminders";
+import { langchainService } from "../../services/langchain";
 
 // Interface for scheduled messages
 interface ScheduledMessage {
@@ -13,6 +14,8 @@ interface ScheduledMessage {
     chatIds: number[];
 }
 
+const adamChatId = 1958271265;
+
 /**
  * Set up scheduled messages for the bot
  */
@@ -20,7 +23,6 @@ export function setupScheduledMessages(
     bot: TelegramBot,
     sendMarkdownMessage: (chatId: number | string, text: string, options?: any) => Promise<TelegramBot.Message>,
     coinMarketCapService: CoinMarketCapService,
-    openaiService: OpenAIService,
     walletService: any
 ) {
     const trelloService = initTrelloService();
@@ -41,10 +43,7 @@ export function setupScheduledMessages(
                     return "Sorry, couldn't fetch Bitcoin price";
                 }
             },
-            chatIds: [
-                // adam
-                1958271265
-            ]
+            chatIds: [adamChatId]
         },
         {
             // Runs every day at 10 AM
@@ -62,7 +61,7 @@ export function setupScheduledMessages(
                     }
 
                     // Get information about the topic
-                    const topicInfo = await openaiService.getTopicInformation(
+                    const topicInfo = await langchainService.getTopicInformation(
                         incompletedCard.name,
                         incompletedCard.desc
                     );
@@ -78,10 +77,7 @@ export function setupScheduledMessages(
                     return "Failed to process daily interest";
                 }
             },
-            chatIds: [
-                // adam
-                1958271265
-            ]
+            chatIds: [adamChatId]
         },
         {
             // Runs every day at 7AM
@@ -97,12 +93,62 @@ export function setupScheduledMessages(
                     return "Sorry, couldn't fetch wallet holdings";
                 }
             },
-            chatIds: [
-                // adam
-                1958271265
-            ]
+            chatIds: [adamChatId]
         }
     ];
+
+    // Add reminder check scheduler
+    cron.schedule(
+        "*/15 * * * *", // Check every 15 minutes
+        async () => {
+            try {
+                // Get upcoming reminders
+                const reminders = await remindersService.getUpcomingReminders();
+
+                // Find reminders that are due in the next 15 minutes
+                const now = new Date();
+                const fifteenMinutesFromNow = new Date(now.getTime() + 15 * 60 * 1000);
+
+                const dueReminders = reminders.filter((reminder) => {
+                    const reminderTime = new Date(reminder.reminderTime);
+                    return reminderTime >= now && reminderTime <= fifteenMinutesFromNow;
+                });
+
+                // Send notifications for due reminders
+                for (const reminder of dueReminders) {
+                    for (const chatId of [adamChatId]) {
+                        // adam's chat ID
+                        try {
+                            const message = `⏰ *Reminder*: ${reminder.title}${reminder.description ? `\n\n${reminder.description}` : ""}`;
+                            const sentMessage = await sendMarkdownMessage(chatId, message);
+
+                            // Mark reminder as completed
+                            await remindersService.updateReminderCompletion(reminder.id, true);
+
+                            // Store the sent message in the conversation context
+                            const botInfo = await bot.getMe();
+                            conversationContextService.addMessage(
+                                sentMessage.message_id,
+                                sentMessage.message_id,
+                                botInfo.id,
+                                true,
+                                message
+                            );
+
+                            logger.info(`Reminder notification sent to ${chatId} for reminder: ${reminder.title}`);
+                        } catch (error) {
+                            logger.error(`Failed to send reminder notification to ${chatId}:`, error);
+                        }
+                    }
+                }
+            } catch (error) {
+                logger.error("Failed to process reminders:", error);
+            }
+        },
+        {
+            timezone: "Europe/Berlin"
+        }
+    );
 
     // Initialize schedulers
     scheduledMessages.forEach((schedule) => {
