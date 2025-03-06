@@ -9,83 +9,101 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
+export type Numeric = ColumnType<string, number | string, number | string>;
+
 export type Taskstatus = "DOING" | "DONE" | "TODO";
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
-export interface _PrismaMigrations {
-  applied_steps_count: Generated<number>;
-  checksum: string;
-  finished_at: Timestamp | null;
-  id: string;
-  logs: string | null;
-  migration_name: string;
-  rolled_back_at: Timestamp | null;
-  started_at: Generated<Timestamp>;
+export type Transactiontype = "CREDIT" | "DEBIT";
+
+export interface Asset {
+  createdAt: Generated<Timestamp>;
+  id: Generated<string>;
+  name: string;
+  symbol: string;
+  type: string;
+  updatedAt: Generated<Timestamp>;
+}
+
+export interface AssetValue {
+  assetId: string;
+  createdAt: Generated<Timestamp>;
+  currency: Generated<string>;
+  id: Generated<string>;
+  timestamp: Generated<Timestamp>;
+  value: Numeric;
+}
+
+export interface BankStatement {
+  accountNumber: string | null;
+  bankName: string | null;
+  createdAt: Generated<Timestamp>;
+  fileName: string;
+  filePath: string;
+  fileType: string;
+  id: Generated<string>;
+  processingStatus: Generated<string>;
+  statementPeriod: string | null;
+  updatedAt: Timestamp;
 }
 
 export interface Interest {
   createdAt: Generated<Timestamp>;
   description: string | null;
-  id: string;
+  id: Generated<string>;
   topic: string;
   updatedAt: Timestamp;
 }
 
-export interface Interest2 {
+export interface PortfolioSnapshot {
   createdAt: Generated<Timestamp>;
-  description: string | null;
+  currency: Generated<string>;
   id: Generated<string>;
-  topic: string;
-  updatedAt: Generated<Timestamp>;
+  timestamp: Generated<Timestamp>;
+  totalValue: Numeric;
 }
 
 export interface Reminder {
   completed: Generated<boolean>;
   createdAt: Generated<Timestamp>;
   description: string | null;
-  id: string;
-  reminderTime: Timestamp;
-  title: string;
-  updatedAt: Timestamp;
-}
-
-export interface Reminder2 {
-  completed: Generated<boolean>;
-  createdAt: Generated<Timestamp>;
-  description: string | null;
   id: Generated<string>;
   reminderTime: Timestamp;
   title: string;
-  updatedAt: Generated<Timestamp>;
+  updatedAt: Timestamp;
 }
 
 export interface Task {
   createdAt: Generated<Timestamp>;
   description: string | null;
   dueDate: Timestamp | null;
-  id: string;
+  id: Generated<string>;
   status: Taskstatus;
   title: string;
   updatedAt: Timestamp;
 }
 
-export interface Task2 {
+export interface Transaction {
+  amount: Numeric;
+  balance: Numeric | null;
+  bankStatementId: string;
+  category: string | null;
   createdAt: Generated<Timestamp>;
-  description: string | null;
-  dueDate: Timestamp | null;
+  date: Timestamp;
+  description: string;
   id: Generated<string>;
-  status: Generated<string>;
-  title: string;
-  updatedAt: Generated<Timestamp>;
+  type: Transactiontype;
+  updatedAt: Timestamp;
 }
 
 export interface DB {
-  _prisma_migrations: _PrismaMigrations;
-  interest: Interest2;
-  Interest: Interest;
-  reminder: Reminder2;
-  Reminder: Reminder;
-  task: Task2;
-  Task: Task;
+  asset: Asset;
+  assetValue: AssetValue;
+  bank_statement: BankStatement;
+  interest: Interest;
+  portfolioSnapshot: PortfolioSnapshot;
+  reminder: Reminder;
+  task: Task;
+  transaction: Transaction;
 }

@@ -361,6 +361,37 @@ export class FileService {
     public getPublicUrl(fileKey: string): string {
         return `${S3_CONFIG.endpointUrl}/${this.bucketName}/${fileKey}`;
     }
+
+    /**
+     * Save a buffer to a local file
+     */
+    public async saveFile(buffer: Buffer, filePath: string): Promise<string> {
+        try {
+            // Ensure the directory exists
+            const dir = path.dirname(filePath);
+            await this.ensureUploadDirExists();
+            
+            if (dir !== this.uploadDir) {
+                try {
+                    await fsPromises.access(dir);
+                } catch (error) {
+                    await fsPromises.mkdir(dir, { recursive: true });
+                    logger.info(`Created directory: ${dir}`);
+                }
+            }
+
+            // Write the file
+            const fullPath = path.resolve(process.cwd(), filePath);
+            await fsPromises.writeFile(fullPath, buffer);
+            logger.info(`File saved successfully: ${fullPath}`);
+            
+            return fullPath;
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            logger.error("Error saving file:", error);
+            throw new Error(`Failed to save file: ${errorMessage}`);
+        }
+    }
 }
 
 // Export a singleton instance
