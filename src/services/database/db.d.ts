@@ -17,51 +17,12 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type Transactiontype = "CREDIT" | "DEBIT";
 
-export interface Asset {
-  createdAt: Generated<Timestamp>;
-  id: Generated<string>;
-  name: string;
-  symbol: string;
-  type: string;
-  updatedAt: Generated<Timestamp>;
-}
-
-export interface AssetValue {
-  assetId: string;
-  createdAt: Generated<Timestamp>;
-  currency: Generated<string>;
-  id: Generated<string>;
-  timestamp: Generated<Timestamp>;
-  value: Numeric;
-}
-
-export interface BankStatement {
-  accountNumber: string | null;
-  bankName: string | null;
-  createdAt: Generated<Timestamp>;
-  fileName: string;
-  filePath: string;
-  fileType: string;
-  id: Generated<string>;
-  processingStatus: Generated<string>;
-  statementPeriod: string | null;
-  updatedAt: Timestamp;
-}
-
 export interface Interest {
   createdAt: Generated<Timestamp>;
   description: string | null;
   id: Generated<string>;
   topic: string;
   updatedAt: Timestamp;
-}
-
-export interface PortfolioSnapshot {
-  createdAt: Generated<Timestamp>;
-  currency: Generated<string>;
-  id: Generated<string>;
-  timestamp: Generated<Timestamp>;
-  totalValue: Numeric;
 }
 
 export interface Reminder {
@@ -98,11 +59,7 @@ export interface Transaction {
 }
 
 export interface DB {
-  asset: Asset;
-  assetValue: AssetValue;
-  bank_statement: BankStatement;
   interest: Interest;
-  portfolioSnapshot: PortfolioSnapshot;
   reminder: Reminder;
   task: Task;
   transaction: Transaction;

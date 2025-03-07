@@ -6,7 +6,6 @@ import { CoinMarketCapService } from "../../services/coinMarketCap";
 import { initTrelloService, interestsListId } from "../../services/trello";
 import { remindersService } from "../../services/reminders";
 import { langchainService } from "../../services/langchain";
-import { AssetsTrackerService, initAssetsTrackerService } from "../../services/assetsTracker";
 
 // Interface for scheduled messages
 interface ScheduledMessage {
@@ -27,7 +26,6 @@ export function setupScheduledMessages(
     walletService: any
 ) {
     const trelloService = initTrelloService();
-    const assetsTrackerService = initAssetsTrackerService(coinMarketCapService, walletService);
 
     // Define scheduled messages
     const scheduledMessages: ScheduledMessage[] = [
@@ -96,9 +94,7 @@ export function setupScheduledMessages(
                 }
             },
             chatIds: [adamChatId]
-        },
-        // Use the asset tracker service's scheduled message definition
-        assetsTrackerService.defineScheduledAssetUpdate([adamChatId], bot)
+        }
     ];
 
     // Add reminder check scheduler

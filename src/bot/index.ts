@@ -11,7 +11,6 @@ import { setupMessageHandlers } from "./handlers/messageHandlers";
 import { setupFileHandlers } from "./handlers/fileHandlers";
 import { setupScheduledMessages } from "./schedulers/scheduledMessages";
 import { setupCommandHandlers } from "./handlers/commandHandlers";
-import { initAssetsTrackerService } from "../services/assetsTracker";
 
 // Initialize the bot
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
@@ -25,7 +24,6 @@ initRemindersService();
 initCoinMarketCapService();
 const coinMarketCapService = new CoinMarketCapService();
 const walletService = initWalletService(coinMarketCapService);
-const assetsTrackerService = initAssetsTrackerService(coinMarketCapService, walletService);
 
 // Set up error handling
 bot.on("polling_error", (error) => {
