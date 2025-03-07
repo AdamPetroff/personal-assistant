@@ -1,0 +1,47 @@
+---
+description: Analysis and design of features
+globs: /features/*.md
+---
+# Feature Design Principles
+
+When designing and implementing features for this project, follow these principles:
+
+## Architecture & Structure
+
+1. **Design for extensibility from the start** - Even when implementing a focused feature, architect it to accommodate future additions without major refactoring.
+
+2. **Separate concerns clearly** - Break features into distinct, logical components with well-defined responsibilities.
+
+3. **Use modular services** - Create focused services that handle specific aspects of functionality rather than monolithic implementations.
+
+4. **Follow consistent patterns** - Maintain consistent naming, parameter structures, and operational patterns across similar functions.
+
+## Data & Schema Design
+
+5. **Create flexible database schemas** - Use type fields and metadata columns that can accommodate future extensions without structural changes.
+
+6. **Plan for relationships** - Consider how different entities relate to each other and design schemas that properly represent these relationships.
+
+7. **Track historical data when valuable** - Include history tracking for data that benefits from temporal analysis.
+
+## Code Quality & Implementation
+
+8. **Avoid logic duplication** - Reuse core logic between different interfaces and entry points to the same functionality.
+
+9. **Provide complete CRUD operations** - Ensure every model has comprehensive add/remove/list capabilities.
+
+10. **Use interfaces and abstractions** - Design with interfaces that can be implemented by different concrete classes as needs evolve.
+
+## User Experience
+
+11. **Support multiple interaction modes** - Implement both structured commands and natural language interfaces to the same core functionality.
+
+12. **Maintain consistent UX** - Ensure a unified user experience regardless of how users choose to interact with the system.
+
+13. **Provide comprehensive feedback** - Give users clear information about the results of their actions and the current state.
+
+## Process
+
+14. **Start with analysis before implementation** - Clearly define the desired outcome and current state before diving into technical details.
+
+15. **Break features into manageable tasks** - Divide implementation into smaller, focused tasks with clear dependencies.

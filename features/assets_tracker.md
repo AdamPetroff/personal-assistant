@@ -1,140 +1,122 @@
 # Assets Tracker
 
-I want to track my assets, such as stocks, crypto, and other investments. For this I want the system to run a cron job every day at 10:00 AM, which will fetch the current prices of all assets and update their values in the database. Every time it runs, I want to receive a message on telegram about how the assets value has changed since the day before, the last 7 days and last month. In addition, the bot should send me an image of the assets value as a line chart accross time.
+I want to be able to start tracking my assets in the database.
+For now, I want to be able to track my crypto assets in my wallets.
+The assets are in multiple wallets and on multiple chains. I should be able to send a message to the bot that I want to start tracking assets on a particular wallet address. There I should also be able to say that I want to start tracking a particular asset - I will provide the token symbol and the network it is on. The system should be able to use the coinmarketcap service to get the remaining details of the asset such as contract address, network id, etc.
+After this the system should be able to track how much of the added tokens are on the added wallets.
 
-## Implementation Plan
+## Analysis
 
-### 1. Database Schema
+### Desired Outcome
 
-Create new tables in the database to store asset data:
+The system should allow users to track cryptocurrency assets across multiple wallets and blockchain networks. When a user adds a wallet address or a token to track, the system should automatically monitor all added tokens across all added wallets. The key components include:
 
-```sql
--- Table to store asset types
-CREATE TABLE "Asset" (
-  "id" TEXT PRIMARY KEY,
-  "name" TEXT NOT NULL,
-  "symbol" TEXT NOT NULL,
-  "type" TEXT NOT NULL, -- 'crypto', 'stock', 'other'
-  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+1. Adding wallet addresses to track (with optional labels)
+2. Adding tokens to track by specifying symbol and network
+3. Using CoinMarketCap API to fetch complete token details
+4. Querying blockchain networks to get token balances in wallets
+5. Storing and retrieving this information for the user
 
--- Table to store asset value history
-CREATE TABLE "AssetValue" (
-  "id" TEXT PRIMARY KEY,
-  "assetId" TEXT NOT NULL REFERENCES "Asset"("id"),
-  "value" DECIMAL NOT NULL,
-  "currency" TEXT NOT NULL DEFAULT 'USD',
-  "timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE("assetId", "timestamp")
-);
+### Current State
 
--- Table to store portfolio snapshots
-CREATE TABLE "PortfolioSnapshot" (
-  "id" TEXT PRIMARY KEY,
-  "totalValue" DECIMAL NOT NULL,
-  "currency" TEXT NOT NULL DEFAULT 'USD',
-  "timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-```
+- The project already has a `CoinMarketCapService` that can fetch token prices and information
+- There's a `WalletService` with blockchain network support and wallet balance functionality
+- However, there are no database tables for storing crypto assets and wallet information
+- No implementation exists for the user to request tracking of specific assets in specific wallets
 
-### 2. Service Implementation
+### Future Extensibility
 
-Create a new `assetsTracker.ts` service with the following components:
+While the current feature focuses on tracking cryptocurrency assets in blockchain wallets, the system should be designed with extensibility in mind to accommodate different asset types in the future, such as:
 
-1. **Asset Management**
+- Binance exchange account holdings
+- Bank account balances
+- Stock portfolios
 
-    - Add/remove/update assets to track
-    - Support for different asset types (crypto, stocks, etc.)
-    - Integration with existing services (Binance, CoinMarketCap)
+This extensibility should be built into the architecture from the beginning to avoid major refactoring later.
 
-2. **Asset Value Tracking**
+### Tasks
 
-    - Fetch current prices for all tracked assets
-    - Store historical values in the database
-    - Calculate total portfolio value
+#### Task 1: Database Schema Implementation
 
-3. **Reporting**
-    - Generate daily/weekly/monthly change reports
-    - Format Telegram messages with asset performance
-    - Create line chart visualizations
+Create new database tables to store:
 
-### 3. Chart Generation
+- Crypto assets (symbol, name, contract address, network, decimals)
+- Wallet addresses (address, network, label)
+- Asset-wallet tracking relationships (which assets are being tracked in which wallets)
+- Asset balance history (for tracking changes over time)
 
-Implement chart generation using a library like Chart.js:
+The schema should use an extensible design with:
 
-1. Install required packages:
+- An asset_type field to distinguish between different types of assets (crypto, exchange, bank, etc.)
+- A source_type field to distinguish between different sources (blockchain wallet, exchange account, bank account, etc.)
+- Flexible metadata fields to store type-specific information
 
-    ```
-    npm install chart.js canvas
-    ```
+#### Task 2: Asset Management Service
 
-2. Create a chart generation utility that:
-    - Fetches historical data from the database
-    - Generates line charts for different time periods
-    - Saves charts as images to be sent via Telegram
+Implement a service that:
 
-### 4. Scheduler Integration
+- Allows adding new assets to track with minimal information (symbol and network)
+- Uses the existing CoinMarketCap service to fetch complete token details
+- Stores the asset information in the database
+- Provides methods to list and manage tracked assets
 
-Add a new scheduled task to the existing cron job system:
+Design the service with interfaces and abstractions that will allow:
 
-1. Add a new entry in `scheduledMessages.ts` to run daily at 10:00 AM
-2. Implement the asset tracking and reporting logic
-3. Configure Telegram message delivery with charts
+- Adding new asset types in the future
+- Plugging in different data sources for asset information
+- Standardizing asset data across different types
 
-### 5. Implementation Steps
+#### Task 3: Wallet Tracking Service
 
-1. **Database Migration (Week 1)**
+Implement a service that:
 
-    - Create new database tables for assets and historical values
-    - Update database type definitions
+- Allows adding wallet addresses to track
+- Associates wallets with the assets to be tracked
+- Uses the existing wallet service to query balances
+- Stores wallet balances for tracked assets
+- Provides methods to list wallets and their tracked asset balances
 
-2. **Core Service (Week 1-2)**
+Design this as a more general "Asset Source" service that can be extended to:
 
-    - Implement `AssetsTrackerService` class
-    - Add methods for tracking and updating asset values
-    - Integrate with existing services (Binance, Wallet, CoinMarketCap)
+- Track different types of asset sources (wallets, exchange accounts, bank accounts)
+- Use different methods to query balances based on source type
+- Maintain a consistent interface regardless of the underlying source
 
-3. **Chart Generation (Week 2)**
+#### Task 4: User Interface Integration
 
-    - Implement chart generation utility
-    - Create line chart visualization for asset values
-    - Test chart generation with sample data
+Implement a comprehensive set of commands for the bot, with corresponding LLM tools that reuse the same underlying logic:
 
-4. **Scheduler Integration (Week 3)**
+##### Asset Commands:
 
-    - Add new scheduled task to run daily
-    - Implement asset value update and reporting logic
-    - Configure Telegram notifications
+- `/asset_add <symbol> <network>` - Add a new asset to track
+- `/asset_remove <symbol> <network>` - Remove an asset from tracking
+- `/asset_list` - List all assets being tracked
+- `/asset_details <symbol>` - Show detailed information about a specific asset
 
-5. **Testing & Deployment (Week 3)**
-    - Test end-to-end functionality
-    - Deploy to production environment
-    - Monitor initial runs and adjust as needed
+##### Wallet Commands:
 
-### 6. Technical Considerations
+- `/wallet_add <address> <network> [label]` - Add a new wallet to track
+- `/wallet_remove <address>` - Remove a wallet from tracking
+- `/wallet_list` - List all wallets being tracked
+- `/wallet_details <address>` - Show detailed information about a specific wallet
 
-1. **Data Storage**
+##### Balance Commands:
 
-    - Efficient storage of time-series data
-    - Indexing for quick retrieval of historical values
-    - Regular cleanup of old data points (if needed)
+- `/balance` - Show balances of all tracked assets across all wallets
+- `/balance_by_asset <symbol>` - Show balance of a specific asset across all wallets
+- `/balance_by_wallet <address>` - Show balances of all assets in a specific wallet
+- `/balance_history <symbol> [timeframe]` - Show historical balance for an asset
 
-2. **Error Handling**
+For each command, create a corresponding LangChain tool that:
 
-    - Graceful handling of API failures
-    - Retry mechanisms for failed requests
-    - Logging and monitoring
+- Calls the same underlying service functions as the command
+- Enables natural language interaction for the same functionality
+- Follows a consistent naming pattern (e.g., `addAssetToTrack` for `/asset_add`)
 
-3. **Performance**
+This approach ensures:
 
-    - Batch processing for multiple assets
-    - Caching of frequently accessed data
-    - Optimized database queries
-
-4. **Security**
-    - Secure storage of API keys and credentials
-    - Validation of input data
-    - Protection against unauthorized access
+- No duplication of business logic between commands and tools
+- Consistent behavior regardless of interface method
+- Support for both structured commands and natural language queries
+- Extensibility for future asset types and sources
+- Complete add/remove/list operations for all models
