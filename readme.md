@@ -75,3 +75,42 @@ The bot will also send you a daily report of your wallet holdings at 7AM.
 ## Development
 
 - Run in development mode: `npm run dev`
+
+## Testing
+
+This project uses Jest for testing. To run the tests:
+
+- Run all tests: `npm test`
+- Run tests in watch mode: `npm run test:watch`
+- Run tests with coverage report: `npm run test:coverage`
+- Run specific test file: `npm test -- <file-pattern>`
+
+Example:
+
+```bash
+# Run only the Langchain service tests
+npm run test-langchain
+
+# Run only the Crypto service tests
+npm run test-crypto
+
+# Run all files with "crypto" in their name
+npm test -- crypto
+```
+
+### Writing Tests
+
+When adding new features, please include tests to ensure functionality continues to work as expected. The project follows a standard Jest testing structure:
+
+#### Test Examples
+
+##### Crypto Service Tests
+
+The Crypto Service tests verify functionality like:
+
+- Network ID mapping between blockchain networks and their IDs
+- Token data fetching from different blockchain networks
+- Error handling for invalid token addresses
+- Cache mechanism for repeated token data requests
+
+This ensures the crypto service correctly handles blockchain data across multiple networks.
