@@ -11,9 +11,31 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
+export type Json = ColumnType<JsonValue, string, string>;
+
+export type JsonArray = JsonValue[];
+
+export type JsonObject = {
+  [K in string]?: JsonValue;
+};
+
+export type JsonPrimitive = boolean | number | string | null;
+
+export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
+
 export type Taskstatus = "DOING" | "DONE" | "TODO";
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
+
+export interface CryptoPortfolioReport {
+  createdAt: Generated<Timestamp>;
+  data: Json;
+  exchangeValueUsd: number;
+  id: Generated<string>;
+  timestamp: Generated<Timestamp>;
+  totalValueUsd: number;
+  walletsValueUsd: number;
+}
 
 export interface Interest {
   createdAt: Generated<Timestamp>;
@@ -64,6 +86,7 @@ export interface Wallet {
 }
 
 export interface DB {
+  crypto_portfolio_report: CryptoPortfolioReport;
   interest: Interest;
   reminder: Reminder;
   task: Task;

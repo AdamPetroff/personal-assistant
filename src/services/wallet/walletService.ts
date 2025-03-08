@@ -11,6 +11,7 @@ export class WalletService {
     private readonly walletRepository: WalletRepository;
     private readonly balanceService: WalletBalanceService;
     private readonly reportService: WalletReportService;
+    private walletsLoadedPromise: Promise<void>;
 
     constructor() {
         this.walletRepository = new WalletRepository();
@@ -18,7 +19,7 @@ export class WalletService {
         this.reportService = new WalletReportService();
 
         // Load wallets from database
-        this.loadWalletsFromDatabase();
+        this.walletsLoadedPromise = this.loadWalletsFromDatabase();
     }
 
     /**
@@ -26,6 +27,9 @@ export class WalletService {
      */
     private async loadWalletsFromDatabase() {
         try {
+            // Clear existing wallets to prevent duplicates
+            this.wallets = [];
+
             const dbWallets = await this.walletRepository.getAll();
             for (const wallet of dbWallets) {
                 this.wallets.push({
@@ -34,6 +38,7 @@ export class WalletService {
                     label: wallet.label || undefined
                 });
             }
+            logger.info(`Loaded ${this.wallets.length} wallets from database`);
         } catch (error) {
             logger.error("Error loading wallets from database:", error);
         }
@@ -131,6 +136,11 @@ export class WalletService {
      * Get all wallets value in USD
      */
     async getAllWalletsValueUsd(): Promise<WalletReport> {
+        // Ensure wallets are loaded by awaiting the promise
+        await this.walletsLoadedPromise;
+
+        logger.info(`Using ${this.wallets.length} wallets to calculate total value`);
+
         const walletsWithValues: WalletWithValue[] = [];
         let totalValueUsd = 0;
 
@@ -148,6 +158,7 @@ export class WalletService {
                 });
 
                 totalValueUsd += walletValueUsd;
+                logger.info(`Added wallet ${wallet.address} with value $${walletValueUsd}`);
             } catch (error) {
                 logger.error(`Failed to get value for wallet ${wallet.address} on ${wallet.network}:`, error);
                 walletsWithValues.push({
@@ -158,6 +169,7 @@ export class WalletService {
             }
         }
 
+        logger.info(`Total wallet value: $${totalValueUsd} from ${walletsWithValues.length} wallets`);
         return {
             totalValueUsd,
             wallets: walletsWithValues

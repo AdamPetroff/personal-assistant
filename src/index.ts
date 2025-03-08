@@ -11,6 +11,8 @@ import { testConnection } from "./services/database/client";
 import { fileService } from "./services/fileService";
 import { initCryptoService } from "./services/crypto";
 import tokenRoutes from "./routes/tokenRoutes";
+import portfolioRoutes from "./routes/portfolioRoutes";
+import path from "path";
 
 // Get port from environment variable or use default
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -74,6 +76,12 @@ app.post("/twiml/echo", twilioController.handleEchoStream);
 
 // Token management routes
 app.use("/api/tokens", tokenRoutes);
+
+// Portfolio management routes
+app.use("/api/portfolio", portfolioRoutes);
+
+// Serve chart images statically
+app.use("/charts", express.static(path.join(__dirname, "../uploads/charts")));
 
 app.get("/", (req, res) => {
     res.send("Hello World");
