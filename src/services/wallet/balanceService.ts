@@ -4,8 +4,8 @@ import { BlockchainNetwork } from "../blockchain-types";
 import { logger } from "../../utils/logger";
 import { env } from "../../config/constants";
 import { TokenBalance, TokenInfo } from "./types";
-import { tokenList } from "./tokenList";
 import { CoinMarketCapService } from "../coinMarketCap";
+import { TokenService } from "./tokenService";
 
 export class WalletBalanceService {
     private readonly etherscanApiKey = env.ETHERSCAN_API_KEY;
@@ -17,9 +17,11 @@ export class WalletBalanceService {
     private readonly snowtraceApiKey = env.SNOWTRACE_API_KEY;
     private readonly basescanApiKey = env.BASESCAN_API_KEY;
     private readonly coinMarketCapService: CoinMarketCapService;
+    private readonly tokenService: TokenService;
 
     constructor(coinMarketCapService: CoinMarketCapService) {
         this.coinMarketCapService = coinMarketCapService;
+        this.tokenService = new TokenService();
     }
 
     /**
@@ -94,8 +96,8 @@ export class WalletBalanceService {
             // For EVM-compatible chains
             const tokenBalances: TokenBalance[] = [];
 
-            // Get tokens for this network
-            const networksTokens = tokenList.filter((token) => token.network === network);
+            // Get tokens for this network from the database
+            const networksTokens = await this.tokenService.getTokensByNetwork(network);
 
             // Fetch balance for each token
             for (const token of networksTokens) {
@@ -126,8 +128,7 @@ export class WalletBalanceService {
                         }
                     }
                 } catch (error) {
-                    logger.warn(`Failed to fetch balance for token ${token.symbol} (${token.contractAddress}):`, error);
-                    // Continue with other tokens
+                    logger.error(`Error fetching balance for token ${token.symbol}:`, error);
                 }
             }
 
@@ -139,8 +140,8 @@ export class WalletBalanceService {
 
             return tokenBalances;
         } catch (error) {
-            logger.error(`Failed to fetch token balances for ${address} on ${network}:`, error, JSON.stringify(error));
-            throw new Error(`Failed to fetch token balances for ${address} on ${network}`);
+            logger.error(`Error fetching token balances for ${address} on ${network}:`, error);
+            return [];
         }
     }
 

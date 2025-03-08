@@ -43,6 +43,17 @@ export interface Task {
   updatedAt: Timestamp;
 }
 
+export interface Token {
+  contractAddress: string;
+  createdAt: Generated<Timestamp>;
+  decimals: number;
+  id: Generated<string>;
+  name: string;
+  network: Blockchainnetwork;
+  symbol: string;
+  updatedAt: Generated<Timestamp>;
+}
+
 export interface Wallet {
   address: string;
   createdAt: Generated<Timestamp>;
@@ -56,5 +67,6 @@ export interface DB {
   interest: Interest;
   reminder: Reminder;
   task: Task;
+  token: Token;
   wallet: Wallet;
 }

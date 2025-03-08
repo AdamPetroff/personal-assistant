@@ -1,6 +1,6 @@
 ---
 description: How I like to code
-globs: 
+globs: *.ts
 alwaysApply: true
 ---
 # Coding workflow preferences

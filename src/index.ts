@@ -10,6 +10,7 @@ import { registerCurrencyConversionIntent } from "./services/exchangeRate";
 import { testConnection } from "./services/database/client";
 import { fileService } from "./services/fileService";
 import { initCryptoService } from "./services/crypto";
+import tokenRoutes from "./routes/tokenRoutes";
 
 // Get port from environment variable or use default
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -64,7 +65,15 @@ process.on("unhandledRejection", (error) => {
 });
 
 const app = express();
+
+// Middleware to parse JSON bodies
+app.use(express.json());
+
+// Register routes
 app.post("/twiml/echo", twilioController.handleEchoStream);
+
+// Token management routes
+app.use("/api/tokens", tokenRoutes);
 
 app.get("/", (req, res) => {
     res.send("Hello World");

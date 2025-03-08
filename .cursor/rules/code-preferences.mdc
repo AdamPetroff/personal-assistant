@@ -1,6 +1,6 @@
 ---
 description: Coding pattern preferences
-globs: 
+globs: *.ts
 alwaysApply: true
 ---
 - Always prefer simple solutions
