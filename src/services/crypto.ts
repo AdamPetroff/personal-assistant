@@ -1,6 +1,6 @@
 import { logger } from "../utils/logger";
 import { env } from "../config/constants";
-import { BlockchainNetwork } from "./wallet";
+import { BlockchainNetwork } from "./blockchain-types";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { langchainService } from "./langchain";
