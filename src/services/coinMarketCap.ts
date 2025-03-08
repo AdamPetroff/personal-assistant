@@ -4,7 +4,7 @@ import { langchainService } from "./langchain";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { env } from "../config/constants";
-import { BlockchainNetwork } from "./wallet";
+import { BlockchainNetwork } from "./blockchain-types";
 import { NETWORK_IDS } from "./crypto";
 import { cryptoService, TokenData as CryptoTokenData } from "./crypto";
 
