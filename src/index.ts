@@ -9,6 +9,7 @@ import { initBinanceService } from "./services/binance";
 import { registerCurrencyConversionIntent } from "./services/exchangeRate";
 import { testConnection } from "./services/database/client";
 import { fileService } from "./services/fileService";
+import { initCryptoService } from "./services/crypto";
 
 // Get port from environment variable or use default
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -26,6 +27,7 @@ async function startApp() {
         initCoinMarketCapService();
         initWalletService();
         initBinanceService();
+        initCryptoService();
 
         logger.info("Assets tracker service initialized");
 

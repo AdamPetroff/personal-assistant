@@ -37,6 +37,6 @@ bot.getMe().then((botInfo) => {
 setupMessageHandlers(bot, sendMarkdownMessage);
 setupFileHandlers(bot, sendMarkdownMessage);
 setupCommandHandlers(bot, sendMarkdownMessage);
-setupScheduledMessages(bot, sendMarkdownMessage, coinMarketCapService(), walletService);
+setupScheduledMessages(bot, sendMarkdownMessage, coinMarketCapService, walletService);
 
 export { bot, sendMarkdownMessage };

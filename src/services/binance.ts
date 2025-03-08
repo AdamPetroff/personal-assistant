@@ -290,7 +290,7 @@ let binanceServiceInstance: BinanceService | null = null;
 
 export function initBinanceService(): BinanceService {
     if (!binanceServiceInstance) {
-        binanceServiceInstance = new BinanceService(coinMarketCapService());
+        binanceServiceInstance = new BinanceService(coinMarketCapService);
 
         // Create LangChain tool for Binance balance
         const binanceBalanceTool = tool(
