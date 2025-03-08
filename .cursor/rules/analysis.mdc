@@ -1,6 +1,6 @@
 ---
 description: Analysis and design of features
-globs: /features/*.md
+globs: *.md
 ---
 # Feature Design Principles
 
