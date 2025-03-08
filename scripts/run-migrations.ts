@@ -1,19 +1,13 @@
 import { promises as fs } from "fs";
-import { FileMigrationProvider, Kysely, Migrator, PostgresDialect } from "kysely";
+import { FileMigrationProvider, Migrator } from "kysely";
 import * as path from "path";
-import { pool } from "../src/services/database/db-pool";
+import { db } from "../src/services/database/database";
 
 require("dotenv").config();
 
 export function getMigrator() {
-    const db = new Kysely<any>({
-        dialect: new PostgresDialect({
-            pool
-        })
-    });
-
     const migrator = new Migrator({
-        db,
+        db: db,
         provider: new FileMigrationProvider({
             fs,
             path,

@@ -5,17 +5,77 @@
 
 import type { ColumnType } from "kysely";
 
+export type Assettype = "BANK" | "CRYPTO" | "EXCHANGE" | "STOCK";
+
 export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
+export type Json = JsonValue;
+
+export type JsonArray = JsonValue[];
+
+export type JsonObject = {
+  [x: string]: JsonValue | undefined;
+};
+
+export type JsonPrimitive = boolean | number | string | null;
+
+export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
+
 export type Numeric = ColumnType<string, number | string, number | string>;
+
+export type Sourcetype = "BANK_ACCOUNT" | "BLOCKCHAIN_WALLET" | "EXCHANGE_ACCOUNT";
 
 export type Taskstatus = "DOING" | "DONE" | "TODO";
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type Transactiontype = "CREDIT" | "DEBIT";
+
+export interface Asset {
+  assetType: Assettype;
+  contractAddress: string | null;
+  createdAt: Generated<Timestamp>;
+  decimals: number | null;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  name: string;
+  network: string;
+  symbol: string;
+  updatedAt: Timestamp;
+}
+
+export interface AssetBalance {
+  assetId: string;
+  balance: Numeric;
+  balanceUsd: Numeric | null;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  priceUsd: Numeric | null;
+  sourceId: string;
+  timestamp: Generated<Timestamp>;
+}
+
+export interface AssetSource {
+  address: string;
+  createdAt: Generated<Timestamp>;
+  id: Generated<string>;
+  label: string | null;
+  metadata: Generated<Json>;
+  network: string;
+  sourceType: Sourcetype;
+  updatedAt: Timestamp;
+}
+
+export interface AssetTracking {
+  assetId: string;
+  createdAt: Generated<Timestamp>;
+  id: Generated<string>;
+  isActive: Generated<boolean>;
+  sourceId: string;
+  updatedAt: Timestamp;
+}
 
 export interface Interest {
   createdAt: Generated<Timestamp>;
@@ -59,6 +119,10 @@ export interface Transaction {
 }
 
 export interface DB {
+  asset: Asset;
+  assetBalance: AssetBalance;
+  assetSource: AssetSource;
+  assetTracking: AssetTracking;
   interest: Interest;
   reminder: Reminder;
   task: Task;

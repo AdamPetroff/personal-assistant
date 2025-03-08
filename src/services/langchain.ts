@@ -16,8 +16,8 @@ export class LangchainService {
 
         this.chatModel = new ChatOpenAI({
             openAIApiKey: env.OPENAI_API_KEY,
-            modelName: "gpt-4o",
-            temperature: 0
+            modelName: "o3-mini"
+            // temperature: 0
         });
     }
 
@@ -60,7 +60,6 @@ export class LangchainService {
                 .join("\n");
 
             const systemPrompt = `You are a personal task management assistant. Parse user messages to determine their intent:
-            ${toolDescriptions}
             Extract relevant dates, times, and descriptions from their message.
             Respond with a single tool call that best matches their intent. It's currently ${new Date().toISOString()}.
             
@@ -82,6 +81,8 @@ export class LangchainService {
             }
 
             const tool = this.tools.find((t) => t.name === toolCall.name);
+
+            console.log(`Tool: ${toolCall.name}`);
 
             return {
                 intent: toolCall.name,

@@ -2,7 +2,7 @@ import axios from "axios";
 import BigNumber from "bignumber.js";
 import { logger } from "../utils/logger";
 import { registerTotalCryptoHoldingsIntent } from "./openai";
-import { CoinMarketCapService } from "./coinMarketCap";
+import { coinMarketCapService, CoinMarketCapService } from "./coinMarketCap";
 import { env } from "../config/constants";
 import { binanceService } from "./binance";
 import { langchainService } from "./langchain";
@@ -122,8 +122,8 @@ export class WalletService {
     private readonly snowtraceApiKey = env.SNOWTRACE_API_KEY;
     private readonly basescanApiKey = env.BASESCAN_API_KEY;
 
-    constructor(coinMarketCapService: CoinMarketCapService) {
-        this.coinMarketCapService = coinMarketCapService;
+    constructor() {
+        this.coinMarketCapService = coinMarketCapService();
 
         // Load wallets from environment variables if available
         this.loadWalletsFromEnv();
@@ -695,8 +695,8 @@ async function getTotalCryptoHoldings(
     }
 }
 
-export function initWalletService(coinMarketCapService: CoinMarketCapService): WalletService {
-    const walletService = new WalletService(coinMarketCapService);
+export function initWalletService(): WalletService {
+    const walletService = new WalletService();
     // Create a LangChain tool for wallet balance
     const walletBalanceTool = tool(
         async () => {
@@ -731,3 +731,5 @@ export function initWalletService(coinMarketCapService: CoinMarketCapService): W
 
     return walletService;
 }
+
+export const walletService = new WalletService();

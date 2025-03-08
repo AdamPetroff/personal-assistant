@@ -3,9 +3,9 @@ import { TELEGRAM_BOT_TOKEN } from "../config/constants";
 import { logger } from "../utils/logger";
 import { initTrelloService } from "../services/trello";
 import { initRemindersService } from "../services/reminders";
-import { initCoinMarketCapService, CoinMarketCapService } from "../services/coinMarketCap";
+import { initCoinMarketCapService, CoinMarketCapService, coinMarketCapService } from "../services/coinMarketCap";
 import { OpenAIService } from "../services/openai";
-import { initWalletService } from "../services/wallet";
+import { initWalletService, walletService } from "../services/wallet";
 import { createMarkdownSender } from "../utils/markdownFormatter";
 import { setupMessageHandlers } from "./handlers/messageHandlers";
 import { setupFileHandlers } from "./handlers/fileHandlers";
@@ -17,13 +17,6 @@ const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
 // Create a wrapper for sendMessage with Markdown support (using simpler Markdown mode)
 const sendMarkdownMessage = createMarkdownSender(bot, false);
-
-// Initialize services
-initTrelloService();
-initRemindersService();
-initCoinMarketCapService();
-const coinMarketCapService = new CoinMarketCapService();
-const walletService = initWalletService(coinMarketCapService);
 
 // Set up error handling
 bot.on("polling_error", (error) => {
@@ -44,6 +37,6 @@ bot.getMe().then((botInfo) => {
 setupMessageHandlers(bot, sendMarkdownMessage);
 setupFileHandlers(bot, sendMarkdownMessage);
 setupCommandHandlers(bot, sendMarkdownMessage);
-setupScheduledMessages(bot, sendMarkdownMessage, coinMarketCapService, walletService);
+setupScheduledMessages(bot, sendMarkdownMessage, coinMarketCapService(), walletService);
 
 export { bot, sendMarkdownMessage };
