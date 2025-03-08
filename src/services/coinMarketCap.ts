@@ -177,3 +177,8 @@ export function initCoinMarketCapService() {
 
     return coinMarketCapService;
 }
+
+const coinMarketCapServiceInstance = new CoinMarketCapService();
+export const coinMarketCapService = (): CoinMarketCapService => {
+    return coinMarketCapServiceInstance;
+};

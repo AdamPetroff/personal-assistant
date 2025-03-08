@@ -1,0 +1,5 @@
+---
+description: Write tests for services if it's possible
+globs: 
+---
+When creating/making changes to a service, make sure to include/create tests for the service. The tests live in /src/scripts

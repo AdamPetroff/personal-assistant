@@ -2,7 +2,7 @@ import axios from "axios";
 import crypto from "crypto";
 import { logger } from "../utils/logger";
 import { env } from "../config/constants";
-import { CoinMarketCapService } from "./coinMarketCap";
+import { coinMarketCapService, CoinMarketCapService } from "./coinMarketCap";
 import { exchangeRateService } from "./exchangeRate";
 import BigNumber from "bignumber.js";
 import { langchainService } from "./langchain";
@@ -288,9 +288,9 @@ export class BinanceService {
 // Create a singleton instance
 let binanceServiceInstance: BinanceService | null = null;
 
-export function initBinanceService(coinMarketCapService: CoinMarketCapService): BinanceService {
+export function initBinanceService(): BinanceService {
     if (!binanceServiceInstance) {
-        binanceServiceInstance = new BinanceService(coinMarketCapService);
+        binanceServiceInstance = new BinanceService(coinMarketCapService());
 
         // Create LangChain tool for Binance balance
         const binanceBalanceTool = tool(
