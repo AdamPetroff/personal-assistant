@@ -123,7 +123,7 @@ export class WalletService {
     private readonly basescanApiKey = env.BASESCAN_API_KEY;
 
     constructor() {
-        this.coinMarketCapService = coinMarketCapService();
+        this.coinMarketCapService = coinMarketCapService;
 
         // Load wallets from environment variables if available
         this.loadWalletsFromEnv();
