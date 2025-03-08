@@ -72,6 +72,8 @@
         "test-crypto": "jest src/__tests__/services/crypto.test.ts",
         "test-coinmarketcap": "ts-node src/scripts/test-coinmarketcap-service.ts",
         "token-manager": "ts-node src/scripts/tokenManager.ts",
+        "crypto-portfolio": "ts-node src/scripts/cryptoPortfolio.ts",
+        "test-chart": "ts-node src/scripts/testChartGeneration.ts",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage"
