@@ -12,6 +12,7 @@ import { fileService } from "./services/fileService";
 import { initCryptoService } from "./services/crypto";
 import tokenRoutes from "./routes/tokenRoutes";
 import portfolioRoutes from "./routes/portfolioRoutes";
+import bankStatementRoutes from "./routes/bankStatementRoutes";
 import path from "path";
 
 // Get port from environment variable or use default
@@ -79,6 +80,9 @@ app.use("/api/tokens", tokenRoutes);
 
 // Portfolio management routes
 app.use("/api/portfolio", portfolioRoutes);
+
+// Bank statement routes
+app.use("/api/bank-statements", bankStatementRoutes);
 
 // Serve chart images statically
 app.use("/charts", express.static(path.join(__dirname, "../uploads/charts")));
