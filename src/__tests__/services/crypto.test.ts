@@ -1,8 +1,7 @@
 import { cryptoService, CryptoService } from "../../services/crypto";
-import { BlockchainNetwork } from "../../services/wallet";
-import { logger } from "../../utils/logger";
 import axios from "axios";
 import { createPublicClient, http, getContract, type PublicClient, type Chain } from "viem";
+import { BlockchainNetwork } from "../../services/blockchain-types";
 
 // Mock the Langchain service
 jest.mock("../../services/langchain", () => ({

@@ -6,6 +6,7 @@ import { env } from "../config/constants";
 import OpenAI from "openai";
 import { FileService } from "./fileService";
 import pdfParse from "pdf-parse";
+import { databaseService } from "./database";
 
 // Define the transaction interface
 export interface BankTransaction {
@@ -144,6 +145,43 @@ Be as precise as possible with the transaction details and ensure all amount val
     }
 
     /**
+     * Process a bank statement PDF and save it to the database for a specific finance source
+     */
+    public async processPdfAndSaveToDatabase(filePath: string, financeSourceId: string): Promise<BankStatementData> {
+        try {
+            // First, check if the finance source exists
+            const source = await databaseService.getFinanceSourceById(financeSourceId);
+            if (!source) {
+                throw new Error(`Finance source with ID ${financeSourceId} not found`);
+            }
+
+            // Process the PDF to extract the data
+            const statementData = await this.processPdf(filePath);
+
+            // Determine the statement date
+            let statementDate = new Date();
+            if (statementData.statementDate) {
+                statementDate = new Date(statementData.statementDate);
+            }
+
+            // Save the statement to the database
+            await databaseService.saveFinanceStatement(financeSourceId, {
+                accountBalance: statementData.accountBalance,
+                statementDate,
+                data: statementData,
+                fileName: path.basename(filePath)
+            });
+
+            logger.info(`Saved bank statement for ${source.name} to database`);
+
+            return statementData;
+        } catch (error: any) {
+            logger.error(`Error processing and saving bank statement: ${error.message}`, error);
+            throw new Error(`Failed to process and save bank statement: ${error.message}`);
+        }
+    }
+
+    /**
      * Parse all bank statements in the bank_statements directory
      */
     public async parseAllBankStatements(): Promise<Record<string, BankStatementData>> {
@@ -173,6 +211,30 @@ Be as precise as possible with the transaction details and ensure all amount val
         } catch (error: any) {
             logger.error("Error parsing all bank statements:", error);
             throw new Error(`Failed to parse bank statements: ${error.message}`);
+        }
+    }
+
+    /**
+     * Get the total balance across all finance sources based on the latest statements
+     */
+    public async getTotalBalance(): Promise<number> {
+        try {
+            return await databaseService.getTotalFinanceBalance();
+        } catch (error: any) {
+            logger.error("Error getting total balance:", error);
+            throw new Error(`Failed to get total balance: ${error.message}`);
+        }
+    }
+
+    /**
+     * Get the latest statements for all finance sources
+     */
+    public async getLatestStatements() {
+        try {
+            return await databaseService.getLatestFinanceStatements();
+        } catch (error: any) {
+            logger.error("Error getting latest statements:", error);
+            throw new Error(`Failed to get latest statements: ${error.message}`);
         }
     }
 

@@ -17,7 +17,7 @@
 import axios from "axios";
 import { coinMarketCapService, initCoinMarketCapService } from "../../services/coinMarketCap";
 import { logger } from "../../utils/logger";
-import { BlockchainNetwork } from "../../services/wallet";
+import { BlockchainNetwork } from "../../services/blockchain-types";
 
 // Mock dependencies
 jest.mock("axios");
