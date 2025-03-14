@@ -1,8 +1,15 @@
 import { DB, Taskstatus } from "./db";
 import { logger } from "../../utils/logger";
 import { db } from "./client";
+import { FinanceSourceRepository } from "./repositories/FinanceSourceRepository";
 
 export class DatabaseService {
+    private financeSourceRepository: FinanceSourceRepository;
+
+    constructor() {
+        this.financeSourceRepository = new FinanceSourceRepository();
+    }
+
     /**
      * Create a new task
      */
@@ -234,6 +241,94 @@ export class DatabaseService {
             logger.error("Failed to delete interest:", error);
             throw new Error("Failed to delete interest from database");
         }
+    }
+
+    /**
+     * Create a new finance source
+     * @deprecated Use FinanceSourceRepository directly
+     */
+    async createFinanceSource(name: string, type: string, accountNumber?: string, description?: string) {
+        return this.financeSourceRepository.create(name, type, accountNumber, description);
+    }
+
+    /**
+     * Get all finance sources
+     * @deprecated Use FinanceSourceRepository directly
+     */
+    async getFinanceSources() {
+        return this.financeSourceRepository.getAll();
+    }
+
+    /**
+     * Get a finance source by ID
+     * @deprecated Use FinanceSourceRepository directly
+     */
+    async getFinanceSourceById(sourceId: string) {
+        return this.financeSourceRepository.getById(sourceId);
+    }
+
+    /**
+     * Update a finance source
+     * @deprecated Use FinanceSourceRepository directly
+     */
+    async updateFinanceSource(
+        sourceId: string,
+        updates: {
+            name?: string;
+            type?: string;
+            accountNumber?: string | null;
+            description?: string | null;
+        }
+    ) {
+        return this.financeSourceRepository.update(sourceId, updates);
+    }
+
+    /**
+     * Delete a finance source
+     * @deprecated Use FinanceSourceRepository directly
+     */
+    async deleteFinanceSource(sourceId: string) {
+        return this.financeSourceRepository.delete(sourceId);
+    }
+
+    /**
+     * Save a bank statement to the database
+     * @deprecated Use FinanceSourceRepository directly
+     */
+    async saveFinanceStatement(
+        financeSourceId: string,
+        statement: {
+            accountBalance: number;
+            statementDate: Date;
+            data: any;
+            fileName?: string;
+        }
+    ) {
+        return this.financeSourceRepository.saveStatement(financeSourceId, statement);
+    }
+
+    /**
+     * Get all statements for a finance source
+     * @deprecated Use FinanceSourceRepository directly
+     */
+    async getFinanceStatementsBySource(sourceId: string) {
+        return this.financeSourceRepository.getStatementsBySourceId(sourceId);
+    }
+
+    /**
+     * Get the latest statement for each finance source
+     * @deprecated Use FinanceSourceRepository directly
+     */
+    async getLatestFinanceStatements() {
+        return this.financeSourceRepository.getLatestStatements();
+    }
+
+    /**
+     * Get the total balance across all finance sources based on latest statements
+     * @deprecated Use FinanceSourceRepository directly
+     */
+    async getTotalFinanceBalance() {
+        return this.financeSourceRepository.getTotalBalance();
     }
 }
 

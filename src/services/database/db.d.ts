@@ -85,6 +85,27 @@ export interface Wallet {
   updatedAt: Generated<Timestamp>;
 }
 
+export interface FinanceSource {
+  id: Generated<string>;
+  name: string;
+  type: string;
+  accountNumber: string | null;
+  description: string | null;
+  createdAt: Generated<Timestamp>;
+  updatedAt: Generated<Timestamp>;
+}
+
+export interface FinanceStatement {
+  id: Generated<string>;
+  financeSourceId: string;
+  accountBalance: number;
+  statementDate: Timestamp;
+  data: Json;
+  fileName: string | null;
+  createdAt: Generated<Timestamp>;
+  updatedAt: Generated<Timestamp>;
+}
+
 export interface DB {
   crypto_portfolio_report: CryptoPortfolioReport;
   interest: Interest;
@@ -92,4 +113,6 @@ export interface DB {
   task: Task;
   token: Token;
   wallet: Wallet;
+  finance_source: FinanceSource;
+  finance_statement: FinanceStatement;
 }
