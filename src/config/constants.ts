@@ -22,6 +22,7 @@ export const env = cleanEnv(process.env, {
     GMAIL_CLIENT_ID: str({ default: "" }),
     GMAIL_CLIENT_SECRET: str({ default: "" }),
     GMAIL_REFRESH_TOKEN: str({ default: "" }),
+    GMAIL_REDIRECT_URI: str({ default: "https://developers.google.com/oauthplayground" }),
 
     // Blockchain explorer API keys (optional but validated if present)
     ETHERSCAN_API_KEY: str({ default: "" }),
@@ -66,7 +67,8 @@ export const COIN_MARKET_CAP_API_KEY = env.COIN_MARKET_CAP_API_KEY;
 export const GMAIL_CONFIG = {
     clientId: env.GMAIL_CLIENT_ID,
     clientSecret: env.GMAIL_CLIENT_SECRET,
-    refreshToken: env.GMAIL_REFRESH_TOKEN
+    refreshToken: env.GMAIL_REFRESH_TOKEN,
+    redirectUri: env.GMAIL_REDIRECT_URI
 };
 
 // S3 Storage Constants
