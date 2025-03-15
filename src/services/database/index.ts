@@ -299,6 +299,7 @@ export class DatabaseService {
         financeSourceId: string,
         statement: {
             accountBalance: number;
+            accountBalanceUsd: number;
             statementDate: Date;
             data: any;
             fileName?: string;

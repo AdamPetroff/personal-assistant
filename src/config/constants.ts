@@ -18,6 +18,12 @@ export const env = cleanEnv(process.env, {
     // Database URL
     DATABASE_URL: str(),
 
+    // Gmail API credentials
+    GMAIL_CLIENT_ID: str({ default: "" }),
+    GMAIL_CLIENT_SECRET: str({ default: "" }),
+    GMAIL_REFRESH_TOKEN: str({ default: "" }),
+    GMAIL_REDIRECT_URI: str({ default: "https://developers.google.com/oauthplayground" }),
+
     // Blockchain explorer API keys (optional but validated if present)
     ETHERSCAN_API_KEY: str({ default: "" }),
     BSCSCAN_API_KEY: str({ default: "" }),
@@ -56,6 +62,14 @@ export const ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
 export const OPENAI_API_KEY = env.OPENAI_API_KEY;
 export const DATABASE_URL = env.DATABASE_URL;
 export const COIN_MARKET_CAP_API_KEY = env.COIN_MARKET_CAP_API_KEY;
+
+// Gmail API Constants
+export const GMAIL_CONFIG = {
+    clientId: env.GMAIL_CLIENT_ID,
+    clientSecret: env.GMAIL_CLIENT_SECRET,
+    refreshToken: env.GMAIL_REFRESH_TOKEN,
+    redirectUri: env.GMAIL_REDIRECT_URI
+};
 
 // S3 Storage Constants
 export const S3_CONFIG = {

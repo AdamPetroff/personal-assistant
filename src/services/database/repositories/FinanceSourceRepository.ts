@@ -1,5 +1,8 @@
 import { db } from "../client";
 import { logger } from "../../../utils/logger";
+import { Currency } from "../db";
+import { exchangeRateService } from "../../exchangeRate";
+import BigNumber from "bignumber.js";
 
 // Define a runtime finance source interface that matches the database shape
 export interface FinanceSourceModel {
@@ -8,6 +11,7 @@ export interface FinanceSourceModel {
     type: string;
     accountNumber: string | null;
     description: string | null;
+    currency: Currency;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -17,11 +21,24 @@ export interface FinanceStatementModel {
     id: string;
     financeSourceId: string;
     accountBalance: number;
+    accountBalanceUsd: number;
     statementDate: Date;
     data: any;
     fileName: string | null;
     createdAt: Date;
     updatedAt: Date;
+}
+
+// Define chart data interface for finance sources
+export interface FinanceChartDataPoint {
+    timestamp: Date;
+    totalBalance: number;
+    sourceBalances: {
+        sourceId: string;
+        sourceName: string;
+        sourceType: string;
+        balance: number;
+    }[];
 }
 
 export class FinanceSourceRepository {
@@ -32,7 +49,8 @@ export class FinanceSourceRepository {
         name: string,
         type: string,
         accountNumber?: string,
-        description?: string
+        description?: string,
+        currency: Currency = "USD"
     ): Promise<FinanceSourceModel> {
         try {
             const newFinanceSource = {
@@ -40,13 +58,14 @@ export class FinanceSourceRepository {
                 type,
                 accountNumber: accountNumber || null,
                 description: description || null,
+                currency,
                 updatedAt: new Date()
             };
 
             const result = await db
                 .insertInto("finance_source")
                 .values(newFinanceSource)
-                .returning(["id", "name", "type", "accountNumber", "description", "createdAt", "updatedAt"])
+                .returning(["id", "name", "type", "accountNumber", "description", "currency", "createdAt", "updatedAt"])
                 .executeTakeFirstOrThrow();
 
             return result as FinanceSourceModel;
@@ -98,6 +117,7 @@ export class FinanceSourceRepository {
             type?: string;
             accountNumber?: string | null;
             description?: string | null;
+            currency?: Currency;
         }
     ): Promise<FinanceSourceModel> {
         try {
@@ -110,7 +130,7 @@ export class FinanceSourceRepository {
                 .updateTable("finance_source")
                 .set(updateData)
                 .where("id", "=", sourceId)
-                .returning(["id", "name", "type", "accountNumber", "description", "createdAt", "updatedAt"])
+                .returning(["id", "name", "type", "accountNumber", "description", "currency", "createdAt", "updatedAt"])
                 .executeTakeFirstOrThrow();
 
             return result as FinanceSourceModel;
@@ -141,6 +161,7 @@ export class FinanceSourceRepository {
         financeSourceId: string,
         statement: {
             accountBalance: number;
+            accountBalanceUsd: number;
             statementDate: Date;
             data: any;
             fileName?: string;
@@ -150,6 +171,7 @@ export class FinanceSourceRepository {
             const newStatement = {
                 financeSourceId,
                 accountBalance: statement.accountBalance,
+                accountBalanceUsd: statement.accountBalanceUsd,
                 statementDate: statement.statementDate,
                 data: statement.data,
                 fileName: statement.fileName || null,
@@ -166,11 +188,16 @@ export class FinanceSourceRepository {
                     "statementDate",
                     "fileName",
                     "createdAt",
-                    "updatedAt"
+                    "updatedAt",
+                    "data"
                 ])
                 .executeTakeFirstOrThrow();
 
-            return result as FinanceStatementModel;
+            return {
+                ...result,
+                accountBalance: Number(result.accountBalance),
+                accountBalanceUsd: statement.accountBalanceUsd
+            } as FinanceStatementModel;
         } catch (error) {
             logger.error("Failed to save finance statement:", error);
             throw new Error("Failed to save finance statement to database");
@@ -189,7 +216,11 @@ export class FinanceSourceRepository {
                 .orderBy("statementDate", "desc")
                 .execute();
 
-            return results as FinanceStatementModel[];
+            return results.map((result) => ({
+                ...result,
+                accountBalance: Number(result.accountBalance),
+                accountBalanceUsd: Number(result.accountBalanceUsd || result.accountBalance)
+            })) as FinanceStatementModel[];
         } catch (error) {
             logger.error("Failed to fetch finance statements:", error);
             throw new Error("Failed to fetch finance statements from database");
@@ -221,7 +252,9 @@ export class FinanceSourceRepository {
                 return {
                     ...statements[0],
                     sourceName: source.name,
-                    sourceType: source.type
+                    sourceType: source.type,
+                    accountBalance: Number(statements[0].accountBalance),
+                    accountBalanceUsd: Number(statements[0].accountBalanceUsd || statements[0].accountBalance)
                 } as FinanceStatementModel & { sourceName: string; sourceType: string };
             });
 
@@ -248,6 +281,120 @@ export class FinanceSourceRepository {
         } catch (error) {
             logger.error("Failed to calculate total finance balance:", error);
             throw new Error("Failed to calculate total finance balance");
+        }
+    }
+
+    /**
+     * Get time-series data for all finance sources suitable for charting
+     * @param startDate Optional start date to filter data
+     * @param endDate Optional end date to filter data
+     * @returns Array of data points organized by date
+     */
+    async getFinanceChartData(startDate?: Date, endDate?: Date): Promise<FinanceChartDataPoint[]> {
+        try {
+            // Get all finance sources
+            const sources = await this.getAll();
+
+            // Create a query to get all statements within the date range
+            let query = db.selectFrom("finance_statement").selectAll();
+
+            // Apply date filters if provided
+            if (startDate) {
+                query = query.where("statementDate", ">=", startDate);
+            }
+
+            if (endDate) {
+                query = query.where("statementDate", "<=", endDate);
+            }
+
+            const result = await query.execute();
+
+            // Execute the query
+            const statements = result.map((result) => ({
+                ...result,
+                accountBalance: Number(result.accountBalance),
+                accountBalanceUsd: Number(result.accountBalanceUsd)
+            })) as FinanceStatementModel[];
+
+            // If no statements found, return empty array
+            if (!statements.length) {
+                return [];
+            }
+
+            // Sort all statements by date
+            statements.sort((a, b) => a.statementDate.getTime() - b.statementDate.getTime());
+
+            // Group statements by date (using date string as key)
+            const statementsByDate = new Map<string, FinanceStatementModel[]>();
+
+            statements.forEach((statement) => {
+                // Get date string (without time) for grouping
+                const dateStr = statement.statementDate.toISOString().split("T")[0];
+
+                if (!statementsByDate.has(dateStr)) {
+                    statementsByDate.set(dateStr, []);
+                }
+
+                statementsByDate.get(dateStr)!.push(statement);
+            });
+
+            // Track the latest balance for each finance source
+            const latestSourceBalances = new Map<string, number>();
+
+            // Convert grouped statements to chart data points
+            const chartDataPoints: FinanceChartDataPoint[] = [];
+
+            // Get all date strings and sort them chronologically
+            const dateStrings = Array.from(statementsByDate.keys()).sort();
+
+            // Process each date
+            for (const dateStr of dateStrings) {
+                const dateStatements = statementsByDate.get(dateStr)!;
+
+                // Update latest balances with statements from this date
+                dateStatements.forEach((statement) => {
+                    latestSourceBalances.set(statement.financeSourceId, Number(statement.accountBalanceUsd));
+                });
+
+                // Convert source balances to USD and create source balances array
+                const sourceBalancesPromises = Array.from(latestSourceBalances.entries()).map(
+                    async ([sourceId, balance]) => {
+                        const source = sources.find((s) => s.id === sourceId);
+
+                        if (!source) {
+                            return {
+                                sourceId,
+                                sourceName: "Unknown Source",
+                                sourceType: "Unknown Type",
+                                balance
+                            };
+                        }
+
+                        return {
+                            sourceId,
+                            sourceName: source.name || "Unknown Source",
+                            sourceType: source.type || "Unknown Type",
+                            balance
+                        };
+                    }
+                );
+
+                const sourceBalances = await Promise.all(sourceBalancesPromises);
+
+                // Calculate total balance from all latest source balances
+                const totalBalance = sourceBalances.reduce((sum, item) => sum + item.balance, 0);
+
+                chartDataPoints.push({
+                    timestamp: new Date(dateStr),
+                    totalBalance,
+                    sourceBalances
+                });
+            }
+
+            return chartDataPoints;
+        } catch (error) {
+            logger.error("Failed to get finance chart data:", error);
+            throw new Error("Failed to retrieve finance chart data from database");
         }
     }
 }

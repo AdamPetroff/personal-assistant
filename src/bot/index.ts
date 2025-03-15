@@ -1,11 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import { TELEGRAM_BOT_TOKEN } from "../config/constants";
 import { logger } from "../utils/logger";
-import { initTrelloService } from "../services/trello";
-import { initRemindersService } from "../services/reminders";
-import { initCoinMarketCapService, CoinMarketCapService, coinMarketCapService } from "../services/coinMarketCap";
-import { OpenAIService } from "../services/openai";
-import { initWalletService, walletService } from "../services/wallet";
+import { coinMarketCapService } from "../services/coinMarketCap";
 import { createMarkdownSender } from "../utils/markdownFormatter";
 import { setupMessageHandlers } from "./handlers/messageHandlers";
 import { setupFileHandlers } from "./handlers/fileHandlers";
@@ -37,6 +33,6 @@ bot.getMe().then((botInfo) => {
 setupMessageHandlers(bot, sendMarkdownMessage);
 setupFileHandlers(bot, sendMarkdownMessage);
 setupCommandHandlers(bot, sendMarkdownMessage);
-setupScheduledMessages(bot, sendMarkdownMessage, coinMarketCapService, walletService);
+setupScheduledMessages(bot, sendMarkdownMessage, coinMarketCapService);
 
 export { bot, sendMarkdownMessage };

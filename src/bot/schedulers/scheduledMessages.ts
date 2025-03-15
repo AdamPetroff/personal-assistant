@@ -6,6 +6,8 @@ import { CoinMarketCapService } from "../../services/coinMarketCap";
 import { initTrelloService, interestsListId } from "../../services/trello";
 import { remindersService } from "../../services/reminders";
 import { langchainService } from "../../services/langchain";
+import { walletService } from "../../services/wallet";
+import { generatePortfolioSummaryMessage } from "./portfolioSummaryMessage";
 
 // Interface for scheduled messages
 interface ScheduledMessage {
@@ -17,13 +19,50 @@ interface ScheduledMessage {
 const adamChatId = 1958271265;
 
 /**
+ * Send portfolio summary with chart to a specific chat
+ */
+export async function sendPortfolioSummary(
+    bot: TelegramBot,
+    sendMarkdownMessage: (chatId: number | string, text: string, options?: any) => Promise<TelegramBot.Message>,
+    chatId: number
+): Promise<void> {
+    try {
+        // Get the full result with potential image
+        const summaryResult = await generatePortfolioSummaryMessage();
+        if (!summaryResult) return;
+
+        // If we have an image buffer, send it with the message
+        if (summaryResult.imageBuffer) {
+            // Send the chart image with caption
+            await bot.sendPhoto(chatId, summaryResult.imageBuffer, {
+                caption: summaryResult.text,
+                parse_mode: "Markdown"
+            });
+        } else {
+            // Just send the text if no image
+            await sendMarkdownMessage(chatId, summaryResult.text);
+        }
+
+        logger.info(`Portfolio summary sent to ${chatId}`);
+    } catch (error) {
+        logger.error(`Failed to send portfolio summary to ${chatId}:`, error);
+
+        // Send error message if summary generation failed
+        try {
+            await sendMarkdownMessage(chatId, "Sorry, couldn't generate portfolio summary. Check logs for details.");
+        } catch (sendError) {
+            logger.error(`Failed to send error message to ${chatId}:`, sendError);
+        }
+    }
+}
+
+/**
  * Set up scheduled messages for the bot
  */
 export function setupScheduledMessages(
     bot: TelegramBot,
     sendMarkdownMessage: (chatId: number | string, text: string, options?: any) => Promise<TelegramBot.Message>,
-    coinMarketCapService: CoinMarketCapService,
-    walletService: any
+    coinMarketCapService: CoinMarketCapService
 ) {
     const trelloService = initTrelloService();
 
@@ -75,22 +114,6 @@ export function setupScheduledMessages(
                         return `Failed to process daily interest: ${error.message}`;
                     }
                     return "Failed to process daily interest";
-                }
-            },
-            chatIds: [adamChatId]
-        },
-        {
-            // Runs every day at 7AM
-            cronExpression: "0 7 * * *",
-            messageGenerator: async () => {
-                try {
-                    const walletData = await walletService.getAllWalletsValueUsd();
-                    return walletService.formatWalletReport(walletData);
-                } catch (error) {
-                    if (error instanceof Error) {
-                        return `Sorry, couldn't fetch wallet holdings: ${error.message}`;
-                    }
-                    return "Sorry, couldn't fetch wallet holdings";
                 }
             },
             chatIds: [adamChatId]
@@ -150,6 +173,19 @@ export function setupScheduledMessages(
         }
     );
 
+    // Add portfolio summary scheduler (needs special handling for the chart)
+    cron.schedule(
+        "0 9 * * *", // Runs every day at 9AM
+        async () => {
+            for (const chatId of [adamChatId]) {
+                await sendPortfolioSummary(bot, sendMarkdownMessage, chatId);
+            }
+        },
+        {
+            timezone: "Europe/Berlin"
+        }
+    );
+
     // Initialize schedulers
     scheduledMessages.forEach((schedule) => {
         cron.schedule(
@@ -161,6 +197,7 @@ export function setupScheduledMessages(
                         if (!message) {
                             return;
                         }
+
                         // Use the markdown sender with the message as-is (no escaping)
                         const sentMessage = await sendMarkdownMessage(chatId, message);
 

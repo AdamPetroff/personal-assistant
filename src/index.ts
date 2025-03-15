@@ -14,6 +14,8 @@ import tokenRoutes from "./routes/tokenRoutes";
 import portfolioRoutes from "./routes/portfolioRoutes";
 import bankStatementRoutes from "./routes/bankStatementRoutes";
 import path from "path";
+import { scheduleRaiffeisenEmailProcessing } from "./cron/raiffeisenEmailProcessor";
+import { schedulePortfolioSnapshot } from "./cron/portfolioSnapshotProcessor";
 
 // Get port from environment variable or use default
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -44,6 +46,10 @@ async function startApp() {
 
         // Register AI intents
         registerCurrencyConversionIntent();
+
+        // Schedule cron jobs
+        scheduleRaiffeisenEmailProcessing();
+        schedulePortfolioSnapshot();
 
         // Start the bot
         await bot.startPolling();
