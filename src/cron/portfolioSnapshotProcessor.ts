@@ -10,7 +10,7 @@ import { logger } from "../utils/logger";
 export function schedulePortfolioSnapshot(): void {
     logger.info("Scheduling daily crypto portfolio snapshot job");
 
-    cron.schedule("0 0 * * *", async () => {
+    cron.schedule("0 4 * * *", async () => {
         try {
             logger.info("Running scheduled crypto portfolio snapshot");
 
