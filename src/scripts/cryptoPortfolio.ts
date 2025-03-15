@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { getPortfolioService } from "../services/wallet/portfolioService";
+import { getCryptoPortfolioService } from "../services/wallet/cryptoPortfolioService";
 import { logger } from "../utils/logger";
 import fs from "fs";
 import path from "path";
@@ -19,7 +19,7 @@ program
         try {
             logger.info("Generating crypto portfolio report...");
 
-            const portfolioService = getPortfolioService();
+            const portfolioService = getCryptoPortfolioService();
             const result = await portfolioService.generateAndSaveReport();
 
             logger.info(`Report saved to database with ID: ${result.reportId}`);
@@ -48,7 +48,7 @@ program
         try {
             logger.info("Fetching latest crypto portfolio report...");
 
-            const portfolioService = getPortfolioService();
+            const portfolioService = getCryptoPortfolioService();
             const result = await portfolioService.getLatestReport();
 
             if (!result) {
@@ -85,7 +85,7 @@ program
             const days = parseInt(options.days, 10);
             logger.info(`Fetching portfolio chart data for the last ${days} days...`);
 
-            const portfolioService = getPortfolioService();
+            const portfolioService = getCryptoPortfolioService();
             const chartData = await portfolioService.getChartData(days);
 
             if (chartData.length === 0) {
@@ -134,7 +134,7 @@ program
 
             logger.info(`Generating chart for the last ${days} days...`);
 
-            const portfolioService = getPortfolioService();
+            const portfolioService = getCryptoPortfolioService();
             const fileName = options.filename ? `${options.filename}.png` : undefined;
 
             const imagePath = await portfolioService.generateChartImage(days, {
@@ -166,7 +166,7 @@ program
             const keepDays = parseInt(options.keepDays, 10);
             logger.info(`Cleaning up portfolio reports older than ${keepDays} days...`);
 
-            const portfolioService = getPortfolioService();
+            const portfolioService = getCryptoPortfolioService();
             const deletedCount = await portfolioService.cleanupOldReports(keepDays);
 
             logger.info(`Cleaned up ${deletedCount} old reports.`);

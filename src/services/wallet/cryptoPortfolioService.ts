@@ -19,13 +19,13 @@ interface ProcessedBalance {
 /**
  * Service for managing crypto portfolio data and reports
  */
-export class PortfolioService {
+export class CryptoPortfolioService {
     private readonly walletService: WalletService;
-    private readonly portfolioRepository: CryptoPortfolioRepository;
+    private readonly cryptoPortfolioRepository: CryptoPortfolioRepository;
 
     constructor() {
         this.walletService = new WalletService();
-        this.portfolioRepository = new CryptoPortfolioRepository();
+        this.cryptoPortfolioRepository = new CryptoPortfolioRepository();
 
         // Initialize Binance service if not already initialized
         try {
@@ -74,7 +74,7 @@ export class PortfolioService {
             };
 
             // Save report to database
-            const reportId = await this.portfolioRepository.save(reportData);
+            const reportId = await this.cryptoPortfolioRepository.save(reportData);
 
             return {
                 reportId,
@@ -97,7 +97,7 @@ export class PortfolioService {
         formattedReport: string;
     } | null> {
         try {
-            const report = await this.portfolioRepository.getLatest();
+            const report = await this.cryptoPortfolioRepository.getLatest();
             if (!report) return null;
 
             // Format report nicely
@@ -128,7 +128,7 @@ export class PortfolioService {
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - days);
 
-            return await this.portfolioRepository.getChartData(startDate, endDate);
+            return await this.cryptoPortfolioRepository.getChartData(startDate, endDate);
         } catch (error) {
             logger.error("Failed to get portfolio chart data:", error);
             throw new Error("Failed to get portfolio chart data");
@@ -170,7 +170,7 @@ export class PortfolioService {
 
             // Generate chart image
             const chartService = getChartService();
-            const imagePath = await chartService.generatePortfolioLineChart(chartData, options);
+            const imagePath = await chartService.generateCryptoPortfolioLineChart(chartData, options);
 
             return imagePath;
         } catch (error) {
@@ -187,7 +187,7 @@ export class PortfolioService {
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - keepDays);
 
-            return await this.portfolioRepository.deleteOlderThan(cutoffDate);
+            return await this.cryptoPortfolioRepository.deleteOlderThan(cutoffDate);
         } catch (error) {
             logger.error("Failed to clean up old portfolio reports:", error);
             throw new Error("Failed to clean up old portfolio reports");
@@ -196,14 +196,14 @@ export class PortfolioService {
 }
 
 // Singleton instance
-let portfolioServiceInstance: PortfolioService | null = null;
+let cryptoPortfolioServiceInstance: CryptoPortfolioService | null = null;
 
 /**
  * Get the portfolio service instance
  */
-export function getPortfolioService(): PortfolioService {
-    if (!portfolioServiceInstance) {
-        portfolioServiceInstance = new PortfolioService();
+export function getCryptoPortfolioService(): CryptoPortfolioService {
+    if (!cryptoPortfolioServiceInstance) {
+        cryptoPortfolioServiceInstance = new CryptoPortfolioService();
     }
-    return portfolioServiceInstance;
+    return cryptoPortfolioServiceInstance;
 }

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getPortfolioService } from "../services/wallet/portfolioService";
+import { getCryptoPortfolioService } from "../services/wallet/cryptoPortfolioService";
 import { logger } from "../utils/logger";
 import path from "path";
 
@@ -12,7 +12,7 @@ export class PortfolioController {
      */
     async getLatestReport(req: Request, res: Response) {
         try {
-            const portfolioService = getPortfolioService();
+            const portfolioService = getCryptoPortfolioService();
             const report = await portfolioService.getLatestReport();
 
             if (!report) {
@@ -31,7 +31,7 @@ export class PortfolioController {
      */
     async generateReport(req: Request, res: Response) {
         try {
-            const portfolioService = getPortfolioService();
+            const portfolioService = getCryptoPortfolioService();
             const result = await portfolioService.generateAndSaveReport();
 
             return res.status(201).json({
@@ -52,7 +52,7 @@ export class PortfolioController {
         try {
             const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
 
-            const portfolioService = getPortfolioService();
+            const portfolioService = getCryptoPortfolioService();
             const chartData = await portfolioService.getChartData(days);
 
             if (chartData.length === 0) {
@@ -87,7 +87,7 @@ export class PortfolioController {
             const widthNum = parseInt(width as string, 10);
             const heightNum = parseInt(height as string, 10);
 
-            const portfolioService = getPortfolioService();
+            const portfolioService = getCryptoPortfolioService();
             const imagePath = await portfolioService.generateChartImage(daysNum, {
                 width: widthNum,
                 height: heightNum,
@@ -134,7 +134,7 @@ export class PortfolioController {
             const widthNum = parseInt(width as string, 10);
             const heightNum = parseInt(height as string, 10);
 
-            const portfolioService = getPortfolioService();
+            const portfolioService = getCryptoPortfolioService();
             const imagePath = await portfolioService.generateChartImage(daysNum, {
                 width: widthNum,
                 height: heightNum,

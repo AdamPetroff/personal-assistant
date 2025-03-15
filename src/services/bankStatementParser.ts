@@ -167,6 +167,7 @@ Be as precise as possible with the transaction details and ensure all amount val
             // Save the statement to the database
             await databaseService.saveFinanceStatement(financeSourceId, {
                 accountBalance: statementData.accountBalance,
+                accountBalanceUsd: statementData.accountBalance,
                 statementDate,
                 data: statementData,
                 fileName: path.basename(filePath)

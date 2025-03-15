@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { getPortfolioService } from "../services/wallet/portfolioService";
+import { getCryptoPortfolioService } from "../services/wallet/cryptoPortfolioService";
 import { logger } from "../utils/logger";
 import fs from "fs";
 import path from "path";
@@ -8,7 +8,7 @@ async function testChartGeneration() {
     try {
         logger.info("Testing chart generation...");
 
-        const portfolioService = getPortfolioService();
+        const portfolioService = getCryptoPortfolioService();
 
         // Generate a chart image
         const imagePath = await portfolioService.generateChartImage(30, {

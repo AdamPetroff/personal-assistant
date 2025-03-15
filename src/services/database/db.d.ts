@@ -7,21 +7,25 @@ import type { ColumnType } from "kysely";
 
 export type Blockchainnetwork = "arbitrum" | "avalanche" | "base" | "bsc" | "ethereum" | "optimism" | "polygon" | "solana";
 
+export type Currency = "CZK" | "EUR" | "USD";
+
 export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
-export type Json = ColumnType<JsonValue, string, string>;
+export type Json = JsonValue;
 
 export type JsonArray = JsonValue[];
 
 export type JsonObject = {
-  [K in string]?: JsonValue;
+  [x: string]: JsonValue | undefined;
 };
 
 export type JsonPrimitive = boolean | number | string | null;
 
 export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
+
+export type Numeric = ColumnType<string, number | string, number | string>;
 
 export type Taskstatus = "DOING" | "DONE" | "TODO";
 
@@ -30,11 +34,34 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 export interface CryptoPortfolioReport {
   createdAt: Generated<Timestamp>;
   data: Json;
-  exchangeValueUsd: number;
+  exchangeValueUsd: Numeric;
   id: Generated<string>;
   timestamp: Generated<Timestamp>;
-  totalValueUsd: number;
-  walletsValueUsd: number;
+  totalValueUsd: Numeric;
+  walletsValueUsd: Numeric;
+}
+
+export interface FinanceSource {
+  accountNumber: string | null;
+  createdAt: Generated<Timestamp>;
+  currency: Generated<Currency>;
+  description: string | null;
+  id: Generated<string>;
+  name: string;
+  type: string;
+  updatedAt: Timestamp;
+}
+
+export interface FinanceStatement {
+  accountBalance: Numeric;
+  accountBalanceUsd: Numeric;
+  createdAt: Generated<Timestamp>;
+  data: Json;
+  fileName: string | null;
+  financeSourceId: string;
+  id: Generated<string>;
+  statementDate: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface Interest {
@@ -85,34 +112,13 @@ export interface Wallet {
   updatedAt: Generated<Timestamp>;
 }
 
-export interface FinanceSource {
-  id: Generated<string>;
-  name: string;
-  type: string;
-  accountNumber: string | null;
-  description: string | null;
-  createdAt: Generated<Timestamp>;
-  updatedAt: Generated<Timestamp>;
-}
-
-export interface FinanceStatement {
-  id: Generated<string>;
-  financeSourceId: string;
-  accountBalance: number;
-  statementDate: Timestamp;
-  data: Json;
-  fileName: string | null;
-  createdAt: Generated<Timestamp>;
-  updatedAt: Generated<Timestamp>;
-}
-
 export interface DB {
   crypto_portfolio_report: CryptoPortfolioReport;
+  finance_source: FinanceSource;
+  finance_statement: FinanceStatement;
   interest: Interest;
   reminder: Reminder;
   task: Task;
   token: Token;
   wallet: Wallet;
-  finance_source: FinanceSource;
-  finance_statement: FinanceStatement;
 }

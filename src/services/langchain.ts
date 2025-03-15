@@ -21,6 +21,19 @@ export class LangchainService {
         });
     }
 
+    /**
+     * Creates a new instance of LangchainService with custom model configuration
+     */
+    static createWithModel(modelName: string, temperature?: number): LangchainService {
+        const service = new LangchainService();
+        service.chatModel = new ChatOpenAI({
+            openAIApiKey: env.OPENAI_API_KEY,
+            modelName: modelName,
+            temperature: temperature ?? undefined
+        });
+        return service;
+    }
+
     registerTools(tools: StructuredTool[]) {
         for (const tool of tools) {
             this.tools.push(tool);
@@ -46,6 +59,53 @@ export class LangchainService {
         }
 
         return handler(parameters);
+    }
+
+    /**
+     * Use a single tool to extract structured data directly from content
+     * @param tool The structured tool to use for extraction
+     * @param content The content to extract data from
+     * @param systemPrompt Optional system prompt to guide extraction
+     * @returns The structured data extracted by the tool
+     */
+    async extractWithTool<T>(tool: StructuredTool, content: string, systemPrompt?: string): Promise<T> {
+        try {
+            // Register the tool if not already registered
+            if (!this.tools.includes(tool)) {
+                this.registerTools([tool]);
+            }
+
+            // Bind the tool to the model
+            const llmWithTools = this.chatModel.bindTools([tool]);
+
+            // Create messages
+            const messages = [
+                new SystemMessage(
+                    systemPrompt ||
+                        `You are a data extraction assistant. Extract structured data from the provided content using the appropriate tool.
+                    Only respond with a tool call, no explanations or other text.`
+                ),
+                new HumanMessage(content)
+            ];
+
+            // Get response with tool call
+            const response = await llmWithTools.invoke(messages);
+
+            // Extract the tool call from the response
+            const toolCall = response.tool_calls?.[0];
+            if (!toolCall) {
+                throw new Error("No tool call received from LangChain");
+            }
+
+            if (toolCall.name !== tool.name) {
+                throw new Error(`Expected tool ${tool.name} but got ${toolCall.name}`);
+            }
+
+            return toolCall.args as T;
+        } catch (error) {
+            logger.error(`Error extracting data with tool ${tool.name}:`, error);
+            throw new Error(`Failed to extract data: ${error}`);
+        }
     }
 
     async parseIntent(userMessage: string): Promise<{
