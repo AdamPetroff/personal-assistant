@@ -2,6 +2,8 @@
  * Utility functions for formatting Telegram messages with Markdown
  */
 
+import TelegramBot from "node-telegram-bot-api";
+
 /**
  * Escapes special characters for Telegram's MarkdownV2 format
  * @param text Text to escape
@@ -139,7 +141,7 @@ export function processMarkdownForTelegram(text: string): string {
  * @param useMarkdownV2 Whether to use MarkdownV2 (true) or simpler Markdown (false)
  * @returns A wrapped sendMessage function with Markdown support
  */
-export function createMarkdownSender(bot: any, useMarkdownV2: boolean = false) {
+export function createMarkdownSender(bot: TelegramBot, useMarkdownV2: boolean = false) {
     return (chatId: number | string, text: string, options: any = {}) => {
         // Use the simpler Markdown mode by default
         const parseMode = useMarkdownV2 ? "MarkdownV2" : "Markdown";
