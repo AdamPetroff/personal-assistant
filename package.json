@@ -6,6 +6,7 @@
     "dependencies": {
         "@anthropic-ai/sdk": "^0.32.1",
         "@aws-sdk/client-s3": "^3.758.0",
+        "@cantoo/pdf-lib": "^2.3.2",
         "@langchain/core": "^0.3.42",
         "@langchain/openai": "^0.4.4",
         "@linear/sdk": "^2.6.0",
@@ -84,6 +85,8 @@
         "gmail": "ts-node src/scripts/gmail.ts",
         "test-chart": "ts-node src/scripts/testChartGeneration.ts",
         "process-raiffeisen-emails": "ts-node src/commands/processRaiffeisenEmails.ts",
+        "process-xtb-emails": "ts-node src/commands/processXtbEmails.ts",
+        "test-xtb-processor": "ts-node src/scripts/test-xtb-email-processor.ts",
         "test-portfolio-summary": "ts-node src/scripts/testPortfolioSummary.ts",
         "test": "jest",
         "test:watch": "jest --watch",
