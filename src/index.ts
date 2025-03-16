@@ -16,6 +16,7 @@ import bankStatementRoutes from "./routes/bankStatementRoutes";
 import path from "path";
 import { scheduleRaiffeisenEmailProcessing } from "./cron/raiffeisenEmailProcessor";
 import { schedulePortfolioSnapshot } from "./cron/portfolioSnapshotProcessor";
+import { scheduleXtbEmailProcessing } from "./cron/xtbEmailProcessor";
 
 // Get port from environment variable or use default
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -50,6 +51,7 @@ async function startApp() {
         // Schedule cron jobs
         scheduleRaiffeisenEmailProcessing();
         schedulePortfolioSnapshot();
+        scheduleXtbEmailProcessing();
 
         // Start the bot
         await bot.startPolling();
