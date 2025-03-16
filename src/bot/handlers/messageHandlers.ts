@@ -84,7 +84,8 @@ export function setupMessageHandlers(
                 // Process the user's message as a regular message
                 const fromId = msg.from?.id || 0;
                 logger.info(`Received message from ${fromId}: ${msg.text}`);
-                const response = await handleMessage(msg.text || "");
+
+                const response = await handleMessage(msg);
 
                 // Send the response
                 const sentMessage = await sendMarkdownMessage(msg.chat.id, response);
