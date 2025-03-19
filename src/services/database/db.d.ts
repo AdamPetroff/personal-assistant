@@ -64,6 +64,18 @@ export interface FinanceStatement {
   updatedAt: Timestamp;
 }
 
+export interface FinanceTransaction {
+  amount: Numeric;
+  category: string;
+  createdAt: Generated<Timestamp>;
+  currency: Currency;
+  financeStatementId: string;
+  id: Generated<string>;
+  name: string;
+  updatedAt: Generated<Timestamp>;
+  usdAmount: Numeric;
+}
+
 export interface Interest {
   createdAt: Generated<Timestamp>;
   description: string | null;
@@ -116,6 +128,7 @@ export interface DB {
   crypto_portfolio_report: CryptoPortfolioReport;
   finance_source: FinanceSource;
   finance_statement: FinanceStatement;
+  finance_transaction: FinanceTransaction;
   interest: Interest;
   reminder: Reminder;
   task: Task;
