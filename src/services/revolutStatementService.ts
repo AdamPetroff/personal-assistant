@@ -47,6 +47,77 @@ export class RevolutStatementService {
     }
 
     /**
+     * Process a screenshot of a Revolut statement and extract the EUR balance
+     * @param fileStream The image file stream
+     * @returns Summary of the processed statement
+     */
+    async processStatementScreenshot(fileStream: Stream): Promise<string> {
+        try {
+            // Extract data from the screenshot
+            const extractedData = await langchainService.extractDataFromImage(
+                fileStream,
+                z.object({
+                    totalBalance: z.number().describe("The total balance shown in the account"),
+                    currency: z.string().describe("The currency code")
+                }),
+                `Extract the total balance and currency from the account in this Revolut statement screenshot.`
+            );
+
+            // Validate that we got EUR data
+            if (extractedData.currency.toUpperCase() !== "EUR") {
+                // If the extracted currency is not EUR, we need to convert it
+                const convertedAmount = await exchangeRateService.convertCurrency(
+                    extractedData.totalBalance,
+                    extractedData.currency,
+                    "EUR"
+                );
+                extractedData.totalBalance = convertedAmount.toNumber();
+                extractedData.currency = "EUR";
+            }
+
+            // Create a simplified statement object
+            const currentDate = new Date();
+            const revolutStatement: RevolutStatement = {
+                documentType: "EUR Statement",
+                accountHolder: {
+                    name: "Revolut Account Holder"
+                },
+                period: {
+                    from: new Date(currentDate.setDate(currentDate.getDate() - 30)), // Assume last 30 days
+                    to: new Date()
+                },
+                balanceSummary: {
+                    openingBalance: {
+                        amount: extractedData.totalBalance, // Use same for opening in screenshot case
+                        currency: extractedData.currency
+                    },
+                    closingBalance: {
+                        amount: extractedData.totalBalance,
+                        currency: extractedData.currency
+                    }
+                },
+                transactions: {
+                    completed: [] // No transactions from screenshot
+                }
+            };
+
+            // Process the statement to add USD amounts
+            const processedStatement = await this.processStatement(revolutStatement);
+
+            // Find or create a finance source for Revolut (EUR)
+            const financeSourceId = await findOrCreateRevolutSource("Screenshot Import", undefined);
+
+            // Save to database
+            await this.saveToDatabase(financeSourceId, processedStatement, "screenshot_import");
+
+            return `Successfully processed Revolut screenshot. Current balance: ${extractedData.totalBalance} ${extractedData.currency}`;
+        } catch (error) {
+            logger.error("Error processing Revolut statement screenshot:", error);
+            throw new Error(`Failed to process Revolut statement screenshot: ${error}`);
+        }
+    }
+
+    /**
      * Extract data from a Revolut statement PDF file
      * @param fileStream The PDF file stream
      * @returns The extracted data and a summary
@@ -193,7 +264,8 @@ export class RevolutStatementService {
                     amount: transaction.amount.amount,
                     currency: transaction.amount.currency as Currency,
                     usdAmount: processedStatement.usdAmounts.transactions.completed[index].amountUsd,
-                    category: transaction.category as string
+                    category: transaction.category as string,
+                    createdAt: transaction.date
                 };
             });
 
@@ -206,7 +278,8 @@ export class RevolutStatementService {
                         amount: transaction.amount.amount,
                         currency: transaction.amount.currency as Currency,
                         usdAmount: processedStatement.usdAmounts.transactions.pending![index].amountUsd,
-                        category: transaction.category as string
+                        category: transaction.category as string,
+                        createdAt: transaction.date
                     };
                 });
 

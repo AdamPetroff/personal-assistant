@@ -218,26 +218,10 @@ export function setupFileHandlers(
                         const stream = await fetchTelegramFile(bot, fileId);
 
                         try {
-                            // For photos of Revolut statements, we could use image processing
-                            // Since the full statement might not be visible in a photo,
-                            // we would typically extract just key information like the total balance
-
-                            const extractedData = await langchainService.extractDataFromImage(
-                                stream.fileStream,
-                                z.object({
-                                    totalBalance: z.number().describe("The total balance of the bank statement"),
-                                    currency: z.string().describe("The currency code of the statement (e.g., USD, EUR)")
-                                }),
-                                `Extract the total balance and currency from the bank statement photo.`
+                            // Use the new processStatementScreenshot method for Revolut statement photos
+                            intentResponse = await revolutStatementService.processStatementScreenshot(
+                                stream.fileStream
                             );
-
-                            // Convert to USD if needed
-                            const totalBalanceUsd = await revolutStatementService.convertToUsd(
-                                extractedData.totalBalance,
-                                extractedData.currency
-                            );
-
-                            intentResponse = `Total balance: ${extractedData.totalBalance} ${extractedData.currency}\nUSD equivalent: $${totalBalanceUsd.toFixed(2)}`;
                         } catch (error) {
                             logger.error("Error processing Revolut statement photo:", error);
                             intentResponse =
@@ -255,7 +239,7 @@ export function setupFileHandlers(
 
         // Send the response and delete the processing message
         await Promise.all([
-            sendMarkdownMessage(chatId, `test: ${intentResponse}`),
+            sendMarkdownMessage(chatId, intentResponse),
             bot.deleteMessage(chatId, processingMessage.message_id)
         ]);
     });
