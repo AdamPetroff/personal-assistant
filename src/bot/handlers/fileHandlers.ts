@@ -6,15 +6,46 @@ import path from "path";
 import { promises as fsPromises } from "fs";
 import axios from "axios";
 import { TELEGRAM_BOT_TOKEN } from "../../config/constants";
+import { langchainService } from "../../services/langchain";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
+import { Stream } from "stream";
+import { HumanMessage } from "@langchain/core/messages";
+import { RevolutStatementSchema } from "../../utils/revolut-statement-schema";
+
+async function getTelegramFileUrl(bot: TelegramBot, fileId: string) {
+    const fileInfo = await bot.getFile(fileId);
+    return { url: `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${fileInfo.file_path}`, fileInfo };
+}
+
+async function fetchTelegramFile(bot: TelegramBot, fileId: string) {
+    try {
+        // Get file info from Telegram
+        const { url, fileInfo } = await getTelegramFileUrl(bot, fileId);
+
+        // Ensure uploads directory exists
+        await fsPromises.mkdir(path.join(process.cwd(), "uploads"), { recursive: true });
+
+        // Download the file
+        const response = await axios({
+            method: "GET",
+            url,
+            responseType: "stream"
+        });
+
+        return { fileInfo, fileStream: response.data as Stream };
+    } catch (error) {
+        logger.error("Error downloading file from Telegram:", error);
+        throw new Error("Failed to download file from Telegram");
+    }
+}
 
 /**
  * Download a file from Telegram servers
  */
 async function downloadTelegramFile(bot: TelegramBot, fileId: string): Promise<{ filePath: string; fileName: string }> {
     try {
-        // Get file info from Telegram
-        const fileInfo = await bot.getFile(fileId);
-        const fileUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${fileInfo.file_path}`;
+        const { fileStream, fileInfo } = await fetchTelegramFile(bot, fileId);
 
         // Create a unique filename
         const fileName = path.basename(fileInfo.file_path || `file_${Date.now()}`);
@@ -23,16 +54,9 @@ async function downloadTelegramFile(bot: TelegramBot, fileId: string): Promise<{
         // Ensure uploads directory exists
         await fsPromises.mkdir(path.join(process.cwd(), "uploads"), { recursive: true });
 
-        // Download the file
-        const response = await axios({
-            method: "GET",
-            url: fileUrl,
-            responseType: "stream"
-        });
-
         // Save the file
         const writer = fs.createWriteStream(downloadPath);
-        response.data.pipe(writer);
+        fileStream.pipe(writer);
 
         return new Promise((resolve, reject) => {
             writer.on("finish", () => {
@@ -91,14 +115,71 @@ export function setupFileHandlers(
         const fileName = msg.document.file_name || `document_${Date.now()}`;
         const mimeType = msg.document.mime_type || "application/octet-stream";
 
-        // Send a processing message
-        await bot.sendMessage(chatId, "Processing your file upload...");
+        // Send a processing message and store its ID
+        const processingMessage = await bot.sendMessage(chatId, "Processing your file upload...");
 
-        // Handle the file upload
-        const response = await handleFileUpload(bot, fileId, fileName, mimeType);
+        // Parse intent if caption exists
+        let intentResponse = "Document upload completed.";
 
-        // Send the response
-        await sendMarkdownMessage(chatId, response);
+        // Define the document intent tool
+        const documentIntentTool = tool(async () => {}, {
+            name: "parseDocumentIntent",
+            description: "Parse the user's intent when uploading a document",
+            schema: z.object({
+                intent: z.enum(["revolut statement", "other"]),
+                description: z.string().optional()
+            })
+        });
+
+        if (msg.caption) {
+            try {
+                const extractedData = await langchainService.extractWithTool<typeof documentIntentTool.schema._type>(
+                    documentIntentTool,
+                    msg.caption,
+                    `Extract the user's intent from their document caption. Also extract any description they might have provided.`
+                );
+
+                // Handle different intents
+                switch (extractedData.intent) {
+                    case "revolut statement":
+                        const stream = await fetchTelegramFile(bot, fileId);
+
+                        const extractedData = await langchainService.extractDataFromPDF(
+                            stream.fileStream,
+                            z.object({
+                                revolutStatement: RevolutStatementSchema,
+                                summary: z
+                                    .string()
+                                    .describe(
+                                        "A summary of the bank statement. Describe the time period covered by the statement and the total balance at the start and end of the period. Mention the biggest transactions"
+                                    )
+                            })
+                        );
+
+                        intentResponse = `Summary: ${extractedData.summary}\n\n The statement has been processed successfully.`;
+                        break;
+                    default:
+                        // Handle default case by using the regular file upload
+                        const response = await handleFileUpload(bot, fileId, fileName, mimeType);
+                        intentResponse = response;
+                }
+            } catch (error) {
+                logger.error("Error parsing document intent:", error);
+                // Continue with default processing if intent parsing fails
+                const response = await handleFileUpload(bot, fileId, fileName, mimeType);
+                intentResponse = response;
+            }
+        } else {
+            // No caption, use default file upload handling
+            const response = await handleFileUpload(bot, fileId, fileName, mimeType);
+            intentResponse = response;
+        }
+
+        // Send the response and delete the processing message
+        await Promise.all([
+            sendMarkdownMessage(chatId, intentResponse),
+            bot.deleteMessage(chatId, processingMessage.message_id)
+        ]);
     });
 
     // Handle photo uploads
@@ -112,14 +193,64 @@ export function setupFileHandlers(
         const fileName = `photo_${Date.now()}.jpg`;
         const mimeType = "image/jpeg";
 
-        // Send a processing message
-        await bot.sendMessage(chatId, "Processing your photo upload...");
+        // Send a processing message and store its ID
+        const processingMessage = await bot.sendMessage(chatId, "Processing your photo upload...");
 
-        // Handle the file upload
-        const response = await handleFileUpload(bot, fileId, fileName, mimeType);
+        // Parse intent if caption exists
+        let intentResponse = "Photo upload completed.";
+        let customFileName = fileName;
 
-        // Send the response
-        await sendMarkdownMessage(chatId, response);
+        // Define the photo intent tool
+        const photoIntentTool = tool(async () => {}, {
+            name: "parsePhotoIntent",
+            description: "Parse the user's intent when uploading a photo",
+            schema: z.object({
+                intent: z.enum(["revolut statement", "other"]),
+                description: z.string().optional()
+            })
+        });
+
+        if (msg.caption) {
+            try {
+                // const { url } = await getTelegramFileUrl(bot, fileId);
+
+                const extractedData = await langchainService.extractWithTool<typeof photoIntentTool.schema._type>(
+                    photoIntentTool,
+                    msg.caption,
+                    `Extract the user's intent from their photo caption. Also extract any description they might have provided.`
+                );
+
+                // Handle different intents
+                switch (extractedData.intent) {
+                    case "revolut statement":
+                        const stream = await fetchTelegramFile(bot, fileId);
+
+                        const extractedData = await langchainService.extractDataFromImage(
+                            stream.fileStream,
+                            z.object({
+                                totalBalance: z.number().describe("The total balance of the bank statement")
+                            }),
+                            `Extract the total balance from the bank statement photo.`
+                        );
+
+                        console.log(extractedData);
+
+                        intentResponse = `Total balance: ${extractedData.totalBalance}`;
+                        break;
+                    default:
+                        intentResponse = "Your photo has been processed with the default settings.";
+                }
+            } catch (error) {
+                logger.error("Error parsing photo intent:", error);
+                // Continue with default processing if intent parsing fails
+            }
+        }
+
+        // Send the response and delete the processing message
+        await Promise.all([
+            sendMarkdownMessage(chatId, `test: ${intentResponse}`),
+            bot.deleteMessage(chatId, processingMessage.message_id)
+        ]);
     });
 
     // Handle audio uploads
@@ -131,14 +262,17 @@ export function setupFileHandlers(
         const fileName = msg.audio.title || `audio_${Date.now()}`;
         const mimeType = msg.audio.mime_type || "audio/mpeg";
 
-        // Send a processing message
-        await bot.sendMessage(chatId, "Processing your audio upload...");
+        // Send a processing message and store its ID
+        const processingMessage = await bot.sendMessage(chatId, "Processing your audio upload...");
 
         // Handle the file upload
         const response = await handleFileUpload(bot, fileId, fileName, mimeType);
 
-        // Send the response
-        await sendMarkdownMessage(chatId, response);
+        // Send the response and delete the processing message
+        await Promise.all([
+            sendMarkdownMessage(chatId, response),
+            bot.deleteMessage(chatId, processingMessage.message_id)
+        ]);
     });
 
     // Handle video uploads
@@ -150,14 +284,17 @@ export function setupFileHandlers(
         const fileName = `video_${Date.now()}.mp4`;
         const mimeType = msg.video.mime_type || "video/mp4";
 
-        // Send a processing message
-        await bot.sendMessage(chatId, "Processing your video upload...");
+        // Send a processing message and store its ID
+        const processingMessage = await bot.sendMessage(chatId, "Processing your video upload...");
 
         // Handle the file upload
         const response = await handleFileUpload(bot, fileId, fileName, mimeType);
 
-        // Send the response
-        await sendMarkdownMessage(chatId, response);
+        // Send the response and delete the processing message
+        await Promise.all([
+            sendMarkdownMessage(chatId, response),
+            bot.deleteMessage(chatId, processingMessage.message_id)
+        ]);
     });
 
     // Handle voice uploads
@@ -169,13 +306,16 @@ export function setupFileHandlers(
         const fileName = `voice_${Date.now()}.ogg`;
         const mimeType = msg.voice.mime_type || "audio/ogg";
 
-        // Send a processing message
-        await bot.sendMessage(chatId, "Processing your voice message...");
+        // Send a processing message and store its ID
+        const processingMessage = await bot.sendMessage(chatId, "Processing your voice message...");
 
         // Handle the file upload
         const response = await handleFileUpload(bot, fileId, fileName, mimeType);
 
-        // Send the response
-        await sendMarkdownMessage(chatId, response);
+        // Send the response and delete the processing message
+        await Promise.all([
+            sendMarkdownMessage(chatId, response),
+            bot.deleteMessage(chatId, processingMessage.message_id)
+        ]);
     });
 }

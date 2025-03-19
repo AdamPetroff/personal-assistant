@@ -1,13 +1,19 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { ChatMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { StructuredTool } from "@langchain/core/tools";
+import { BaseMessageFields, ChatMessage, HumanMessage, MessageContent, SystemMessage } from "@langchain/core/messages";
+import { StructuredTool, tool } from "@langchain/core/tools";
 import { logger } from "../utils/logger";
 import { env } from "../config/constants";
+import { ReadableStream } from "stream/web";
+import { z } from "zod";
+import streamToBase64 from "../utils/streamToBase64";
+import { Stream } from "stream";
+import { parsePDF } from "../utils/pdfParser";
 
 export class LangchainService {
     private tools: StructuredTool[] = [];
     private handlers: Map<string, (parameters: any) => Promise<any>> = new Map();
     private chatModel: ChatOpenAI;
+    private chat4oModel: ChatOpenAI;
 
     constructor() {
         if (!env.OPENAI_API_KEY) {
@@ -17,6 +23,11 @@ export class LangchainService {
         this.chatModel = new ChatOpenAI({
             openAIApiKey: env.OPENAI_API_KEY,
             modelName: "o3-mini"
+            // temperature: 0
+        });
+        this.chat4oModel = new ChatOpenAI({
+            openAIApiKey: env.OPENAI_API_KEY,
+            model: "gpt-4o"
             // temperature: 0
         });
     }
@@ -68,7 +79,11 @@ export class LangchainService {
      * @param systemPrompt Optional system prompt to guide extraction
      * @returns The structured data extracted by the tool
      */
-    async extractWithTool<T>(tool: StructuredTool, content: string, systemPrompt?: string): Promise<T> {
+    async extractWithTool<T>(
+        tool: StructuredTool,
+        content: string | MessageContent,
+        systemPrompt?: string
+    ): Promise<T> {
         try {
             // Register the tool if not already registered
             if (!this.tools.includes(tool)) {
@@ -85,7 +100,7 @@ export class LangchainService {
                         `You are a data extraction assistant. Extract structured data from the provided content using the appropriate tool.
                     Only respond with a tool call, no explanations or other text.`
                 ),
-                new HumanMessage(content)
+                new HumanMessage({ content: content })
             ];
 
             // Get response with tool call
@@ -105,6 +120,116 @@ export class LangchainService {
         } catch (error) {
             logger.error(`Error extracting data with tool ${tool.name}:`, error);
             throw new Error(`Failed to extract data: ${error}`);
+        }
+    }
+
+    /**
+     * Extract structured data from an image according to a Zod schema
+     * @param imageStream Stream containing the image data
+     * @param zodSchema Zod schema defining the structure of data to extract
+     * @param customPrompt Optional custom prompt to guide the extraction
+     * @returns The structured data extracted from the image, validated against the Zod schema
+     */
+    async extractDataFromImage<T extends z.ZodObject<any>>(
+        imageStream: ReadableStream | Stream,
+        zodSchema: T,
+        customPrompt?: string
+    ): Promise<z.infer<T>> {
+        try {
+            // Convert stream to base64 if needed
+            const imageBase64 =
+                imageStream instanceof Buffer ? imageStream.toString("base64") : await streamToBase64(imageStream);
+
+            // Create a tool for extracting data according to the schema
+            const extractionTool = tool(async (args: z.infer<T>) => args, {
+                name: "extractStructuredData",
+                description: "Extract structured data from an image according to a specific schema",
+                schema: zodSchema
+            });
+
+            // Create the system message with schema information
+            const schemaDescription = JSON.stringify(zodSchema.description, null, 2);
+            const systemPrompt =
+                customPrompt ||
+                `You are a data extraction assistant. Extract structured data from the provided image according to this schema: ${schemaDescription}
+                Use the extractStructuredData tool to return the extracted data.
+                Include all required fields. If you cannot determine a field value, use null or an empty string.`;
+
+            // Bind the tool to the model
+            const llmWithTools = this.chat4oModel.bindTools([extractionTool]);
+
+            // Create messages with image content
+            const messages = [
+                new SystemMessage(systemPrompt),
+                new HumanMessage({
+                    content: [
+                        {
+                            type: "text",
+                            text: "Extract structured data from this image according to the specified schema."
+                        },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/jpeg;base64,${imageBase64}`
+                            }
+                        }
+                    ]
+                })
+            ];
+
+            // Get response with tool call
+            const response = await llmWithTools.invoke(messages);
+
+            // Extract the tool call from the response
+            const toolCall = response.tool_calls?.[0];
+            if (!toolCall) {
+                throw new Error("No tool call received from LangChain");
+            }
+
+            if (toolCall.name !== extractionTool.name) {
+                throw new Error(`Expected tool ${extractionTool.name} but got ${toolCall.name}`);
+            }
+
+            // The args are already validated by the tool's schema
+            return toolCall.args as z.infer<T>;
+        } catch (error) {
+            logger.error("Error extracting data from image:", error);
+            throw new Error(`Failed to extract data from image: ${error}`);
+        }
+    }
+
+    /**
+     * Extract structured data from a PDF according to a Zod schema
+     * @param pdfStream Stream containing the PDF data
+     * @param zodSchema Zod schema defining the structure of data to extract
+     * @param customPrompt Optional custom prompt to guide the extraction
+     * @returns The structured data extracted from the PDF, validated against the Zod schema
+     */
+    async extractDataFromPDF<T extends z.ZodObject<any>>(
+        pdfStream: ReadableStream | Stream,
+        zodSchema: T,
+        customPrompt?: string
+    ): Promise<z.infer<T>> {
+        try {
+            // Parse the PDF into text
+            const pdfText = await parsePDF(pdfStream);
+
+            console.log(pdfText);
+
+            // Create a tool for extracting data according to the schema
+            const extractionTool = tool(async (args: z.infer<T>) => args, {
+                name: "extract_pdf_data",
+                description: "Extract structured data from PDF text content",
+                schema: zodSchema
+            });
+
+            // Use the text content for extraction
+            const result = await this.extractWithTool<z.infer<T>>(extractionTool, pdfText, customPrompt);
+
+            return result;
+        } catch (error) {
+            logger.error("Error extracting data from PDF:", error);
+            throw new Error(`Failed to extract data from PDF: ${error}`);
         }
     }
 

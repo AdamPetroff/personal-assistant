@@ -1,11 +1,7 @@
 import { WalletService } from "./walletService";
-import { WalletBalanceService } from "./balanceService";
-import { WalletReportService } from "./reportService";
-import { registerTotalCryptoHoldingsIntent } from "../openai";
 import { langchainService } from "../langchain";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
-import { logger } from "../../utils/logger";
 
 // Export types
 export * from "./types";
@@ -50,6 +46,26 @@ export function initWalletService(): WalletService {
     registerTotalCryptoHoldingsIntent(() => walletService.getTotalCryptoHoldings());
 
     return walletService;
+}
+
+function registerTotalCryptoHoldingsIntent(
+    getTotalHoldingsFunction: () => Promise<{ totalUsd: number; formattedReport: string }>
+) {
+    // Create and register LangChain tool
+    const totalCryptoHoldingsTool = tool(
+        async () => {
+            const { formattedReport } = await getTotalHoldingsFunction();
+            return formattedReport;
+        },
+        {
+            name: "get_total_crypto_holdings",
+            description: "Get the total value of all your crypto holdings (Binance + wallets)",
+            schema: z.object({})
+        }
+    );
+
+    // Register with LangChain service
+    langchainService.registerTools([totalCryptoHoldingsTool]);
 }
 
 // Export the wallet service singleton
