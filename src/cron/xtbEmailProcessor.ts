@@ -6,9 +6,9 @@ import { logger } from "../utils/logger";
  * Schedule XTB statement email processing to run twice daily
  */
 export function scheduleXtbEmailProcessing(): void {
-    logger.info("Scheduling XTB trading statement email processing job (twice daily)");
+    logger.info("Scheduling XTB trading statement email processing job (every 4 hours)");
 
-    cron.schedule("0 */12 * * *", async () => {
+    cron.schedule("0 */4 * * *", async () => {
         try {
             logger.info("Running scheduled XTB trading statement email processing");
 

@@ -10,8 +10,7 @@ import { langchainService } from "../../services/langchain";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { Stream } from "stream";
-import { HumanMessage } from "@langchain/core/messages";
-import { RevolutStatementSchema } from "../../utils/revolut-statement-schema";
+import { revolutStatementService } from "../../services/revolutStatementService";
 
 async function getTelegramFileUrl(bot: TelegramBot, fileId: string) {
     const fileInfo = await bot.getFile(fileId);
@@ -144,19 +143,14 @@ export function setupFileHandlers(
                     case "revolut statement":
                         const stream = await fetchTelegramFile(bot, fileId);
 
-                        const extractedData = await langchainService.extractDataFromPDF(
-                            stream.fileStream,
-                            z.object({
-                                revolutStatement: RevolutStatementSchema,
-                                summary: z
-                                    .string()
-                                    .describe(
-                                        "A summary of the bank statement. Describe the time period covered by the statement and the total balance at the start and end of the period. Mention the biggest transactions"
-                                    )
-                            })
-                        );
-
-                        intentResponse = `Summary: ${extractedData.summary}\n\n The statement has been processed successfully.`;
+                        try {
+                            await revolutStatementService.processStatementPdfFile(stream.fileStream);
+                            intentResponse = `The statement has been processed and saved successfully.`;
+                        } catch (error) {
+                            logger.error("Error processing Revolut statement:", error);
+                            intentResponse =
+                                "Error processing the Revolut statement. Please try again or contact support.";
+                        }
                         break;
                     default:
                         // Handle default case by using the regular file upload
@@ -212,8 +206,6 @@ export function setupFileHandlers(
 
         if (msg.caption) {
             try {
-                // const { url } = await getTelegramFileUrl(bot, fileId);
-
                 const extractedData = await langchainService.extractWithTool<typeof photoIntentTool.schema._type>(
                     photoIntentTool,
                     msg.caption,
@@ -225,17 +217,32 @@ export function setupFileHandlers(
                     case "revolut statement":
                         const stream = await fetchTelegramFile(bot, fileId);
 
-                        const extractedData = await langchainService.extractDataFromImage(
-                            stream.fileStream,
-                            z.object({
-                                totalBalance: z.number().describe("The total balance of the bank statement")
-                            }),
-                            `Extract the total balance from the bank statement photo.`
-                        );
+                        try {
+                            // For photos of Revolut statements, we could use image processing
+                            // Since the full statement might not be visible in a photo,
+                            // we would typically extract just key information like the total balance
 
-                        console.log(extractedData);
+                            const extractedData = await langchainService.extractDataFromImage(
+                                stream.fileStream,
+                                z.object({
+                                    totalBalance: z.number().describe("The total balance of the bank statement"),
+                                    currency: z.string().describe("The currency code of the statement (e.g., USD, EUR)")
+                                }),
+                                `Extract the total balance and currency from the bank statement photo.`
+                            );
 
-                        intentResponse = `Total balance: ${extractedData.totalBalance}`;
+                            // Convert to USD if needed
+                            const totalBalanceUsd = await revolutStatementService.convertToUsd(
+                                extractedData.totalBalance,
+                                extractedData.currency
+                            );
+
+                            intentResponse = `Total balance: ${extractedData.totalBalance} ${extractedData.currency}\nUSD equivalent: $${totalBalanceUsd.toFixed(2)}`;
+                        } catch (error) {
+                            logger.error("Error processing Revolut statement photo:", error);
+                            intentResponse =
+                                "Error processing the Revolut statement photo. Please try uploading the full PDF statement for better results.";
+                        }
                         break;
                     default:
                         intentResponse = "Your photo has been processed with the default settings.";

@@ -15,6 +15,8 @@ const TransactionCategoryEnum = z.enum([
     "OTHER" // Uncategorized transactions
 ]);
 
+export type TransactionCategory = z.infer<typeof TransactionCategoryEnum>;
+
 // Helper schemas
 const MoneyAmount = z
     .object({
