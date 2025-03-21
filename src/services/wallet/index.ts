@@ -26,21 +26,8 @@ export function initWalletService(): WalletService {
         }
     );
 
-    // Create a LangChain tool for total crypto holdings
-    const totalCryptoHoldingsTool = tool(
-        async () => {
-            const { formattedReport } = await walletService.getTotalCryptoHoldings();
-            return formattedReport;
-        },
-        {
-            name: "get_total_crypto_holdings",
-            description: "Get a summary of your total cryptocurrency holdings including Binance",
-            schema: z.object({})
-        }
-    );
-
     // Register the tools with LangChain service
-    langchainService.registerTools([walletBalanceTool, totalCryptoHoldingsTool]);
+    langchainService.registerTools([walletBalanceTool]);
 
     // Register the total holdings capability
     registerTotalCryptoHoldingsIntent(() => walletService.getTotalCryptoHoldings());
@@ -58,8 +45,8 @@ function registerTotalCryptoHoldingsIntent(
             return formattedReport;
         },
         {
-            name: "get_total_crypto_holdings",
-            description: "Get the total value of all your crypto holdings (Binance + wallets)",
+            name: "get_crypto_holdings",
+            description: "Get the value of your crypto holdings (Binance + wallets)",
             schema: z.object({})
         }
     );
