@@ -50,7 +50,10 @@ export const env = cleanEnv(process.env, {
     AWS_SECRET_ACCESS_KEY: str({ default: "" }),
     AWS_ENDPOINT_URL_S3: str({ default: "" }),
     AWS_REGION: str({ default: "auto" }),
-    BUCKET_NAME: str({ default: "" })
+    BUCKET_NAME: str({ default: "" }),
+
+    // PDF Password
+    PDF_PASSWORD: str({ default: "" })
 });
 
 // Export individual constants for easier access

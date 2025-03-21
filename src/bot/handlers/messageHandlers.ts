@@ -3,6 +3,7 @@ import { handleReply } from "./replyHandler";
 import { logger } from "../../utils/logger";
 import { conversationContextService } from "../../services/conversationContext";
 import TelegramBot from "node-telegram-bot-api";
+import { z } from "zod";
 
 /**
  * Enhanced version of sendMarkdownMessage that also stores the message in conversation context
@@ -35,6 +36,17 @@ const createSendAndTrackMarkdownMessage = (
         }
     };
 };
+
+const tgReadyToolResponse = z.object({
+    text: z.string(),
+    image: z.instanceof(Buffer).optional()
+});
+
+export type TgReadyToolResponse = z.infer<typeof tgReadyToolResponse>;
+
+export function isFinishedResponse(response: any) {
+    return tgReadyToolResponse.safeParse(response).success;
+}
 
 /**
  * Set up message handling for the bot
@@ -85,10 +97,17 @@ export function setupMessageHandlers(
                 const fromId = msg.from?.id || 0;
                 logger.info(`Received message from ${fromId}: ${msg.text}`);
 
-                const response = await handleMessage(msg);
+                const response = await handleMessage(msg, bot);
 
-                // Send the response
-                const sentMessage = await sendMarkdownMessage(msg.chat.id, response);
+                let sentMessage: TelegramBot.Message;
+                if (response.image) {
+                    sentMessage = await bot.sendPhoto(msg.chat.id, response.image, {
+                        caption: response.text,
+                        parse_mode: "Markdown"
+                    });
+                } else {
+                    sentMessage = await sendMarkdownMessage(msg.chat.id, response.text);
+                }
 
                 // Store both the user's message and the bot's response in the conversation context
                 // This allows future replies to have context
@@ -109,7 +128,7 @@ export function setupMessageHandlers(
                     sentMessage.message_id, // Message ID
                     botInfo.id, // Bot ID
                     true, // Is bot
-                    response // Message text
+                    response.text // Message text
                 );
             }
         } catch (error) {

@@ -242,6 +242,7 @@ export class FinanceSourceRepository {
                     .selectAll()
                     .where("financeSourceId", "=", source.id)
                     .orderBy("statementDate", "desc")
+                    .orderBy("createdAt", "desc")
                     .limit(1)
                     .execute();
 

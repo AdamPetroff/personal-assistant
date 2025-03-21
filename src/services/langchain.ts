@@ -214,8 +214,6 @@ export class LangchainService {
             // Parse the PDF into text
             const pdfText = await parsePDF(pdfStream);
 
-            console.log(pdfText);
-
             // Create a tool for extracting data according to the schema
             const extractionTool = tool(async (args: z.infer<T>) => args, {
                 name: "extract_pdf_data",

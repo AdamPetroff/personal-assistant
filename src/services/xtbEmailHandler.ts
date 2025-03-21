@@ -29,6 +29,7 @@ interface XtbStatementData {
     accountNumber: string;
     accountHolder: string;
     totalBalance: number;
+    freeMargin: number;
     currency: string;
     statementDate: Date;
     openPositions: XtbPosition[];
@@ -54,6 +55,9 @@ const xtbStatementSchema = z.object({
     totalBalance: z
         .number()
         .describe("The total account balance (as a number). It's might be called 'Majetek' in the provided text."),
+    freeMargin: z
+        .number()
+        .describe("The free margin (as a number). It might be called'Volná marže' in the provided text."),
     currency: z.string().describe("The currency code (EUR, USD, CZK, etc.)"),
     statementDate: z.string().describe("The statement date in ISO format"),
     openPositions: z
@@ -85,7 +89,7 @@ export class XtbEmailHandler {
     private readonly XTB_EMAIL_SENDER = "dailystatements@xtb.com";
     private readonly FINANCE_SOURCE_TYPE = "trading_account";
     private readonly FINANCE_SOURCE_NAME = "XTB Trading";
-    private readonly PDF_PASSWORD = "k0R2x7U5";
+    private readonly PDF_PASSWORD = env.PDF_PASSWORD;
     private readonly tempDir: string;
     private extractStatementDataTool: DynamicStructuredTool<typeof xtbStatementSchema>;
 
@@ -315,12 +319,14 @@ Extract information from the XTB statement.
 Be precise with numerical values - convert string representations to numbers without currency symbols.
 Use the extractXtbStatementData tool to provide the structured data.`;
 
+            logger.info(`Extracting structured data from XTB statement.`);
             // Extract data using our tool
             const extractedData = await this.langchainService.extractWithTool<XtbStatementData>(
                 this.extractStatementDataTool,
                 `Extract structured data from this XTB trading statement:\n\n${pdfText}`,
                 systemPrompt
             );
+            logger.info(`Extracted structured data from XTB statement.`);
 
             // Validate the parsed data
             xtbStatementSchema.parse(extractedData);
@@ -402,6 +408,8 @@ Use the extractXtbStatementData tool to provide the structured data.`;
             if (!financeSource) {
                 throw new Error(`Finance source with ID ${financeSourceId} not found`);
             }
+
+            statementData.totalBalance = statementData.totalBalance + statementData.freeMargin;
 
             // Convert account balance to USD if not already in USD
             let accountBalanceUsd = statementData.totalBalance;
