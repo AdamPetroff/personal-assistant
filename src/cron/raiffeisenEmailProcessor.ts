@@ -10,7 +10,7 @@ import { logger } from "../utils/logger";
 export function scheduleRaiffeisenEmailProcessing(): void {
     logger.info("Scheduling Raiffeisen Bank email processing job (hourly)");
 
-    cron.schedule("*/5 * * * *", async () => {
+    cron.schedule("0 */6 * * *", async () => {
         try {
             logger.info("Running scheduled Raiffeisen Bank email processing");
 
