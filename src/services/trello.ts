@@ -5,6 +5,8 @@ import { databaseService } from "./database";
 import { langchainService } from "./langchain";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import { SingleMessageResponse } from "../bot/handlers/messageHandlers";
+import { registerCallbackQueryHandler } from "../bot/handlers/callbackQueryHandlers";
 
 export const interestsListId = "6781af478a024f11a93b752d";
 
@@ -189,6 +191,46 @@ export function initTrelloService() {
         boardId: env.TRELLO_BOARD_ID
     });
 
+    // Register callback query handlers for Trello actions
+    registerCallbackQueryHandler(
+        /^remove_task:(.+)$/,
+        async (query, bot) => {
+            try {
+                const taskId = query.data?.split(":")[1];
+                if (!taskId) {
+                    await bot.answerCallbackQuery(query.id, { text: "Invalid task ID" });
+                    return;
+                }
+
+                await trelloService.deleteCard(taskId);
+
+                // Answer the callback query
+                await bot.answerCallbackQuery(query.id, {
+                    text: "Task removed successfully!"
+                });
+
+                // Update the message to show the task was deleted
+                if (query.message && query.message.text) {
+                    // Preserve the original message and append status
+                    const originalText = query.message.text;
+                    const updatedText = `${originalText}\n\n_✅ Task deleted successfully_`;
+
+                    await bot.editMessageText(updatedText, {
+                        chat_id: query.message.chat.id,
+                        message_id: query.message.message_id,
+                        parse_mode: "Markdown"
+                    });
+                }
+            } catch (error) {
+                logger.error("Error handling remove_task callback:", error);
+                await bot.answerCallbackQuery(query.id, {
+                    text: "Error removing task. Please try again."
+                });
+            }
+        },
+        "Handler for task removal buttons"
+    );
+
     // trelloService.getBoardLabels().then((lists) => {
     //     console.log(lists);
     // });
@@ -202,7 +244,8 @@ export function initTrelloService() {
         },
         {
             name: "create_task",
-            description: "Create a new task or todo item with optional due date. Use when the user wants to add a task or todo.",
+            description:
+                "Create a new task or todo item with optional due date. Use when the user wants to add a task or todo.",
             schema: z.object({
                 title: z.string().describe("The title of the task"),
                 description: z.string().optional().describe("A detailed description of the task"),
@@ -211,6 +254,41 @@ export function initTrelloService() {
         }
     );
 
+    const createMultipleTasksTool = tool(
+        async ({ tasks }) => {
+            const results = [];
+            for (const task of tasks) {
+                const result = await trelloService.createCard(
+                    todoListId,
+                    task.title,
+                    task.description,
+                    task.dueDate ? new Date(task.dueDate) : undefined
+                );
+                results.push(result);
+            }
+            return {
+                success: true,
+                tasks: results,
+                message: `Successfully created ${results.length} tasks: ${results.map((task) => `"${task.name}"`).join(", ")}`
+            };
+        },
+        {
+            name: "create_multiple_tasks",
+            description:
+                "Create multiple tasks or todo items at once. Use when the user wants to add several tasks together.",
+            schema: z.object({
+                tasks: z
+                    .array(
+                        z.object({
+                            title: z.string().describe("The title of the task"),
+                            description: z.string().optional().describe("A detailed description of the task"),
+                            dueDate: z.string().optional().describe("Optional ISO date string for when the task is due")
+                        })
+                    )
+                    .describe("An array of tasks to create")
+            })
+        }
+    );
 
     const completeTaskTool = tool(
         async ({ taskId }) => {
@@ -218,7 +296,8 @@ export function initTrelloService() {
         },
         {
             name: "complete_task",
-            description: "Mark a task or todo item as complete. Use when the user wants to mark a task as done or finished.",
+            description:
+                "Mark a task or todo item as complete. Use when the user wants to mark a task as done or finished.",
             schema: z.object({
                 taskId: z.string().describe("The ID of the task to mark as complete")
             })
@@ -272,16 +351,44 @@ export function initTrelloService() {
     const listTodosTool = tool(
         async () => {
             const cards = await trelloService.getCardsInList(todoListId);
-            return {
-                success: true,
-                tasks: cards.map(card => ({
-                    id: card.id,
-                    title: card.name,
-                    description: card.desc,
-                    dueDate: card.due,
-                    completed: card.dueComplete
-                }))
-            };
+
+            if (cards.length === 0) {
+                return {
+                    text: "You don't have any tasks in your todo list.",
+                    success: true,
+                    tasks: []
+                };
+            }
+
+            // Create a separate message for each task
+            const messages: SingleMessageResponse[] = cards.map((card) => {
+                // Create delete button for this task
+                const inlineKeyboard = [
+                    [
+                        {
+                            text: `🗑️ Remove: ${card.name.substring(0, 30)}${card.name.length > 30 ? "..." : ""}`,
+                            callback_data: `remove_task:${card.id}`
+                        }
+                    ]
+                ];
+
+                // Format task details
+                const taskText = `*${card.name}*\n${card.desc ? `_Description_: ${card.desc}\n` : ""}${card.due ? `_Due_: ${new Date(card.due).toLocaleDateString()}\n` : ""}${card.dueComplete ? "✅ Completed" : "⏳ Pending"}`;
+
+                return {
+                    text: taskText,
+                    buttons: {
+                        inline_keyboard: inlineKeyboard
+                    }
+                };
+            });
+
+            // Add header message
+            messages.unshift({
+                text: `*Your Tasks (${cards.length})*\nHere are your current tasks:`
+            });
+
+            return messages;
         },
         {
             name: "list_todos",
@@ -297,7 +404,8 @@ export function initTrelloService() {
         deleteTaskTool,
         trackInterestTool,
         getInterestsTool,
-        listTodosTool
+        listTodosTool,
+        createMultipleTasksTool
     ]);
 
     return trelloService;

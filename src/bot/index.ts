@@ -7,6 +7,7 @@ import { setupMessageHandlers } from "./handlers/messageHandlers";
 import { setupFileHandlers } from "./handlers/fileHandlers";
 import { setupScheduledMessages } from "./schedulers/scheduledMessages";
 import { setupCommandHandlers } from "./handlers/commandHandlers";
+import { setupCallbackQueryHandlers } from "./handlers/callbackQueryHandlers";
 
 // Initialize the bot
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
@@ -33,6 +34,7 @@ bot.getMe().then((botInfo) => {
 setupMessageHandlers(bot, sendMarkdownMessage);
 setupFileHandlers(bot, sendMarkdownMessage);
 setupCommandHandlers(bot, sendMarkdownMessage);
+setupCallbackQueryHandlers(bot, sendMarkdownMessage);
 setupScheduledMessages(bot, sendMarkdownMessage, coinMarketCapService);
 
 export { bot, sendMarkdownMessage };
