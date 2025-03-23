@@ -18,6 +18,7 @@ import { scheduleRaiffeisenEmailProcessing } from "./cron/raiffeisenEmailProcess
 import { schedulePortfolioSnapshot } from "./cron/portfolioSnapshotProcessor";
 import { scheduleXtbEmailProcessing } from "./cron/xtbEmailProcessor";
 import { initFinanceChartService } from "./services/chart/financeChartService";
+import { initRemindersService } from "./services/reminders";
 
 // Get port from environment variable or use default
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -37,6 +38,7 @@ async function startApp() {
         initBinanceService();
         initCryptoService();
         initFinanceChartService();
+        initRemindersService();
 
         logger.info("Assets tracker service initialized");
 
