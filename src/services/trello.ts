@@ -8,8 +8,6 @@ import { z } from "zod";
 import { SingleMessageResponse } from "../bot/handlers/messageHandlers";
 import { registerCallbackQueryHandler } from "../bot/handlers/callbackQueryHandlers";
 
-export const interestsListId = "6781af478a024f11a93b752d";
-
 interface TrelloConfig {
     apiKey: string;
     token: string;
@@ -231,12 +229,6 @@ export function initTrelloService() {
         "Handler for task removal buttons"
     );
 
-    // trelloService.getBoardLabels().then((lists) => {
-    //     console.log(lists);
-    // });
-
-    // Define the list IDs
-
     // Create LangChain tools
     const createTaskTool = tool(
         async ({ title, description, dueDate }) => {
@@ -318,35 +310,6 @@ export function initTrelloService() {
         }
     );
 
-    const trackInterestTool = tool(
-        async ({ topic, description }) => {
-            await trelloService.createCard(interestsListId, topic, description);
-            return {
-                success: true,
-                message: "Interest added successfully. User will be notified with the details about the topic soon."
-            };
-        },
-        {
-            name: "track_interest_in_topic",
-            description: "Use when the user expresses curiosity or interest in learning more about a topic or subject",
-            schema: z.object({
-                topic: z.string().describe("The topic or interest to track"),
-                description: z.string().optional().describe("Additional details or context about the interest")
-            })
-        }
-    );
-
-    const getInterestsTool = tool(
-        async () => {
-            return trelloService.getCardsInList(interestsListId);
-        },
-        {
-            name: "get_interests",
-            description: "Retrieve all tracked interests",
-            schema: z.object({})
-        }
-    );
-
     // Create a tool for listing todos/tasks
     const listTodosTool = tool(
         async () => {
@@ -397,13 +360,11 @@ export function initTrelloService() {
         }
     );
 
-    // Register all tools with LangChain service
+    // Register all tools with LangChain service (excluding interest tools)
     langchainService.registerTools([
         createTaskTool,
         completeTaskTool,
         deleteTaskTool,
-        trackInterestTool,
-        getInterestsTool,
         listTodosTool,
         createMultipleTasksTool
     ]);
