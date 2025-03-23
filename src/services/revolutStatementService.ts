@@ -265,7 +265,8 @@ export class RevolutStatementService {
                     currency: transaction.amount.currency as Currency,
                     usdAmount: processedStatement.usdAmounts.transactions.completed[index].amountUsd,
                     category: transaction.category as string,
-                    createdAt: transaction.date
+                    createdAt: transaction.date,
+                    transactionDate: transaction.date
                 };
             });
 
@@ -279,7 +280,8 @@ export class RevolutStatementService {
                         currency: transaction.amount.currency as Currency,
                         usdAmount: processedStatement.usdAmounts.transactions.pending![index].amountUsd,
                         category: transaction.category as string,
-                        createdAt: transaction.date
+                        createdAt: transaction.date,
+                        transactionDate: transaction.date
                     };
                 });
 

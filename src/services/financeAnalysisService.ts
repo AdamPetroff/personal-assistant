@@ -6,6 +6,7 @@ import { Tool, tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { langchainService } from "./langchain";
 import { startOfDay, endOfDay } from "../utils/dateUtils";
+import { exchangeRateService } from "./exchangeRate";
 
 export interface SpendingByCategory {
     category: string;
@@ -53,8 +54,8 @@ export class FinanceAnalysisService {
                     db.fn.sum<string>("amount").as("totalAmount"),
                     db.fn.sum<string>("usdAmount").as("totalUsdAmount")
                 ])
-                .where("createdAt", ">=", startDate)
-                .where("createdAt", "<=", endDate)
+                .where("transactionDate", ">=", startDate)
+                .where("transactionDate", "<=", endDate)
                 .groupBy("category");
 
             // Add currency filter if specified
@@ -73,8 +74,8 @@ export class FinanceAnalysisService {
                     db.fn.sum<string>("usdAmount").as("totalUsdAmount"),
                     db.fn.count<number>("id").as("totalTransactions")
                 ])
-                .where("createdAt", ">=", startDate)
-                .where("createdAt", "<=", endDate)
+                .where("transactionDate", ">=", startDate)
+                .where("transactionDate", "<=", endDate)
                 .executeTakeFirst();
 
             // Fetch individual transactions if expanded is true
@@ -83,9 +84,9 @@ export class FinanceAnalysisService {
             if (options?.expanded) {
                 const transactionsQuery = db
                     .selectFrom("finance_transaction")
-                    .select(["name", "usdAmount"])
-                    .where("createdAt", ">=", startDate)
-                    .where("createdAt", "<=", endDate);
+                    .select(["name", "usdAmount", "amount", "currency"])
+                    .where("transactionDate", ">=", startDate)
+                    .where("transactionDate", "<=", endDate);
 
                 if (options?.currency) {
                     transactionsQuery.where("currency", "=", options.currency);
@@ -95,7 +96,12 @@ export class FinanceAnalysisService {
 
                 individualTransactions = transactions.map((t) => ({
                     name: t.name,
-                    usdAmount: Number(t.usdAmount)
+                    usdAmount: Number(t.usdAmount),
+                    czkAmount: Number(
+                        t.currency === "CZK"
+                            ? t.amount
+                            : exchangeRateService.convertCurrency(t.usdAmount, t.currency, "CZK")
+                    )
                 }));
             }
 

@@ -3,15 +3,16 @@ import { z } from "zod";
 // Transaction categories enum
 export const TransactionCategoryEnum = z.enum([
     "GROCERIES", // Food stores, supermarkets
-    "RESTAURANT", // Dining out, cafes, bars
-    "TRAVEL", // Transportation, flights, trains
+    "RESTAURANT&DRINKS", // Dining out, cafes, bars
+    "TRANSPORTATION&TRAVEL", // Transportation, flights, trains
     "ACCOMMODATION", // Hotels, rentals, lodging
     "BILLS", // Utilities, subscriptions, regular payments
     "TRANSFERS", // Bank transfers, money movements
+    "CLOTHES&ACCESSORIES", // Clothes, accessories, shoes
+    "CAR", // Car, fuel, maintenance
     "SHOPPING", // Retail purchases, online shopping
-    "ENTERTAINMENT", // Movies, events, streaming services
-    "HEALTHCARE", // Medical expenses, pharmacy
-    "EDUCATION", // Courses, books, training
+    "ENTERTAINMENT&SUBSCRIPTIONS", // Movies, events, streaming services
+    "HEALTHCARE&FITNESS", // Medical expenses, pharmacy
     "OTHER" // Uncategorized transactions
 ]);
 

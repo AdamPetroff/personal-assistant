@@ -244,7 +244,7 @@ export class LangchainService {
 
             const systemPrompt = `You are a personal task management assistant. Parse user messages to determine their intent:
             Extract relevant dates, times, and descriptions from their message.
-            Respond with a single tool call that best matches their intent. It's currently ${new Date().toISOString()}.
+            Respond with a single tool call that best matches their intent. It's currently ${new Date().toLocaleString("en-US", { weekday: "long" })}, ${new Date().toISOString()}.
             
             IMPORTANT: Make sure to extract ALL required parameters from the user's message. If a parameter is missing, use a reasonable default or ask for it explicitly.`;
 

@@ -1,7 +1,7 @@
 import { db } from "../client";
 import { logger } from "../../../utils/logger";
 import { Currency } from "../db";
-import { TransactionCategory } from "../../../utils/revolut-statement-schema";
+import { TransactionCategory, TransactionCategoryEnum } from "../../../utils/revolut-statement-schema";
 
 // Define a runtime finance transaction interface that matches the database shape
 export interface FinanceTransactionModel {
@@ -12,6 +12,7 @@ export interface FinanceTransactionModel {
     currency: Currency;
     usdAmount: number;
     category: string;
+    transactionDate: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -26,7 +27,8 @@ export class FinanceTransactionRepository {
         amount: number,
         currency: Currency,
         usdAmount: number,
-        category: string
+        category: string,
+        transactionDate?: Date
     ): Promise<FinanceTransactionModel> {
         try {
             // Validate category against the TransactionCategory type
@@ -39,6 +41,7 @@ export class FinanceTransactionRepository {
                 currency,
                 usdAmount,
                 category,
+                ...(transactionDate && { transactionDate }),
                 updatedAt: new Date()
             };
 
@@ -53,6 +56,7 @@ export class FinanceTransactionRepository {
                     "currency",
                     "usdAmount",
                     "category",
+                    "transactionDate",
                     "createdAt",
                     "updatedAt"
                 ])
@@ -93,6 +97,72 @@ export class FinanceTransactionRepository {
     }
 
     /**
+     * Get all transactions by category
+     */
+    async getByCategory(category: TransactionCategory): Promise<FinanceTransactionModel[]> {
+        try {
+            // Validate category
+            this.validateCategory(category);
+
+            const results = await db
+                .selectFrom("finance_transaction")
+                .selectAll()
+                .where("category", "=", category)
+                .orderBy("transactionDate", "desc")
+                .execute();
+
+            return results.map((result) => ({
+                ...result,
+                amount: Number(result.amount),
+                usdAmount: Number(result.usdAmount)
+            })) as FinanceTransactionModel[];
+        } catch (error) {
+            logger.error("Failed to fetch finance transactions by category:", error);
+            throw new Error("Failed to fetch finance transactions by category from database");
+        }
+    }
+
+    /**
+     * Update a transaction's category by transaction ID
+     */
+    async updateCategory(transactionId: string, category: TransactionCategory): Promise<FinanceTransactionModel> {
+        try {
+            // Validate category
+            this.validateCategory(category);
+
+            const result = await db
+                .updateTable("finance_transaction")
+                .set({
+                    category,
+                    updatedAt: new Date()
+                })
+                .where("id", "=", transactionId)
+                .returning([
+                    "id",
+                    "financeStatementId",
+                    "name",
+                    "amount",
+                    "currency",
+                    "usdAmount",
+                    "category",
+                    "transactionDate",
+                    "createdAt",
+                    "updatedAt"
+                ])
+                .executeTakeFirstOrThrow();
+
+            return {
+                ...result,
+                amount: Number(result.amount),
+                usdAmount: Number(result.usdAmount)
+            } as FinanceTransactionModel;
+        } catch (error) {
+            logger.error("Failed to update transaction category:", error);
+            throw new Error("Failed to update transaction category in database");
+        }
+    }
+
+    /**
      * Update a finance transaction
      */
     async update(
@@ -103,6 +173,7 @@ export class FinanceTransactionRepository {
             currency?: Currency;
             usdAmount?: number;
             category?: string;
+            transactionDate?: Date;
         }
     ): Promise<FinanceTransactionModel> {
         try {
@@ -128,6 +199,7 @@ export class FinanceTransactionRepository {
                     "currency",
                     "usdAmount",
                     "category",
+                    "transactionDate",
                     "createdAt",
                     "updatedAt"
                 ])
@@ -169,6 +241,7 @@ export class FinanceTransactionRepository {
             currency: Currency;
             usdAmount: number;
             category: string;
+            transactionDate?: Date;
         }[]
     ): Promise<number> {
         try {
@@ -195,24 +268,7 @@ export class FinanceTransactionRepository {
      * Helper method to validate that a category string matches the TransactionCategory enum
      */
     private validateCategory(category: string): void {
-        // Check if the category is a valid TransactionCategory
-        const validCategories = [
-            "GROCERIES",
-            "RESTAURANT",
-            "TRAVEL",
-            "ACCOMMODATION",
-            "BILLS",
-            "TRANSFERS",
-            "SHOPPING",
-            "ENTERTAINMENT",
-            "HEALTHCARE",
-            "EDUCATION",
-            "OTHER"
-        ];
-
-        if (!validCategories.includes(category)) {
-            throw new Error(`Invalid transaction category: ${category}`);
-        }
+        TransactionCategoryEnum.parse(category);
     }
 }
 
