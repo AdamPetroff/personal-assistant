@@ -19,6 +19,8 @@ import { schedulePortfolioSnapshot } from "./cron/portfolioSnapshotProcessor";
 import { scheduleXtbEmailProcessing } from "./cron/xtbEmailProcessor";
 import { initFinanceChartService } from "./services/chart/financeChartService";
 import { initRemindersService } from "./services/reminders";
+import { initTrelloService } from "./services/trello";
+import { initInterestService } from "./services/interestService";
 
 // Get port from environment variable or use default
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -39,6 +41,11 @@ async function startApp() {
         initCryptoService();
         initFinanceChartService();
         initRemindersService();
+        initTrelloService();
+        initInterestService();
+
+        // Interest service is auto-initialized via the import
+        logger.info("Interest tracking service initialized");
 
         logger.info("Assets tracker service initialized");
 

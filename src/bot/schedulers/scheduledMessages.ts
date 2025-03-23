@@ -3,11 +3,10 @@ import { logger } from "../../utils/logger";
 import { conversationContextService } from "../../services/conversationContext";
 import cron from "node-cron";
 import { CoinMarketCapService } from "../../services/coinMarketCap";
-import { initTrelloService, interestsListId } from "../../services/trello";
 import { remindersService } from "../../services/reminders";
 import { langchainService } from "../../services/langchain";
-import { walletService } from "../../services/wallet";
 import { generatePortfolioSummaryMessage } from "./portfolioSummaryMessage";
+import { interestService } from "../../services/interestService";
 
 // Interface for scheduled messages
 interface ScheduledMessage {
@@ -64,8 +63,6 @@ export function setupScheduledMessages(
     sendMarkdownMessage: (chatId: number | string, text: string, options?: any) => Promise<TelegramBot.Message>,
     coinMarketCapService: CoinMarketCapService
 ) {
-    const trelloService = initTrelloService();
-
     // Define scheduled messages
     const scheduledMessages: ScheduledMessage[] = [
         {
@@ -90,25 +87,26 @@ export function setupScheduledMessages(
             // cronExpression: "*/1 * * * *", // every minute
             messageGenerator: async () => {
                 try {
-                    // Get an incomplete card from interests list
-                    const interestCards = await trelloService.getCardsInList(interestsListId);
-                    const incompletedCard = interestCards.find((card) => !card.dueComplete);
+                    // Get all interests from the database
+                    const interests = await interestService.getInterests();
 
-                    if (!incompletedCard) {
-                        console.log("No pending interests to explore today!");
+                    // Skip if no interests
+                    if (interests.length === 0) {
+                        console.log("No interests to explore today!");
                         return null;
                     }
 
+                    // Select a random interest
+                    const randomIndex = Math.floor(Math.random() * interests.length);
+                    const selectedInterest = interests[randomIndex];
+
                     // Get information about the topic
                     const topicInfo = await langchainService.getTopicInformation(
-                        incompletedCard.name,
-                        incompletedCard.desc
+                        selectedInterest.topic,
+                        selectedInterest.description || ""
                     );
 
-                    // Mark the card as complete
-                    await trelloService.updateCardCompletion(incompletedCard.id, true);
-
-                    return `📚 Daily Learning: *${incompletedCard.name}*\n\n${topicInfo}\n\nHappy learning! 🎯`;
+                    return `📚 Daily Learning: *${selectedInterest.topic}*\n\n${topicInfo}\n\nHappy learning! 🎯`;
                 } catch (error) {
                     if (error instanceof Error) {
                         return `Failed to process daily interest: ${error.message}`;
