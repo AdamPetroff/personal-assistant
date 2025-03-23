@@ -1,7 +1,7 @@
 import { langchainService } from "../../services/langchain";
 import { logger } from "../../utils/logger";
 import TelegramBot from "node-telegram-bot-api";
-import { isFinishedResponse, TgReadyToolResponse } from "./messageHandlers";
+import { isFinishedResponse, TgReadyToolResponse, SingleMessageResponse } from "./messageHandlers";
 
 export async function handleMessage(message: TelegramBot.Message, bot: TelegramBot): Promise<TgReadyToolResponse> {
     if (!message.text) {

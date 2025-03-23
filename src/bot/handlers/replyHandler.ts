@@ -1,6 +1,7 @@
 import { logger } from "../../utils/logger";
 import { conversationContextService } from "../../services/conversationContext";
 import { langchainService } from "../../services/langchain";
+import { TgReadyToolResponse, SingleMessageResponse } from "./messageHandlers";
 
 /**
  * Handle a reply to a bot message
@@ -13,7 +14,7 @@ export async function handleReply(
     replyToMessageId: number,
     messageText: string,
     userId: number
-): Promise<{ response: string; threadId: number }> {
+): Promise<{ response: string | TgReadyToolResponse; threadId: number }> {
     if (!messageText) {
         return { response: "Please send a text message", threadId: replyToMessageId };
     }
@@ -46,13 +47,17 @@ export async function handleReply(
         }
 
         // Generate a response based on the conversation history
-        const response = await langchainService.generateConversationalResponse(messageText, conversationHistory);
+        // This returns a string, as per its implementation
+        const responseText = await langchainService.generateConversationalResponse(messageText, conversationHistory);
 
-        // Add the user's message and the bot's response to the conversation
+        // Add the user's message to the conversation context
         conversationContextService.addMessage(threadId, Date.now(), userId, false, messageText);
-        conversationContextService.addMessage(threadId, Date.now() + 1, 0, true, response);
 
-        return { response, threadId };
+        // Store the bot's response in the conversation
+        conversationContextService.addMessage(threadId, Date.now() + 1, 0, true, responseText);
+
+        // Return the response as a string (default behavior)
+        return { response: responseText, threadId };
     } catch (error) {
         logger.error("Error handling reply:", error);
         return {
