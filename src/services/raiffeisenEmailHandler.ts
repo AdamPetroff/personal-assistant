@@ -166,7 +166,8 @@ export class RaiffeisenEmailHandler {
                 transactionData.transactionAmount,
                 transactionData.currency as any, // Cast to Currency type
                 usdAmount,
-                transactionData.category // No need to convert to uppercase as it's already in the correct format
+                transactionData.category, // No need to convert to uppercase as it's already in the correct format
+                transactionData.transactionDate
             );
 
             logger.info(`Saved finance transaction for statement ${financeStatementId}`);

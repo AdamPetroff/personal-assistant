@@ -324,6 +324,9 @@ export class GmailService {
                 })
             );
 
+            // Sort emails from oldest to newest based on the date
+            emailsMetadata.sort((a, b) => a.date.getTime() - b.date.getTime());
+
             return emailsMetadata;
         } catch (error) {
             logger.error("Error fetching emails:", error);

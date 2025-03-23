@@ -72,6 +72,7 @@ export interface FinanceTransaction {
   financeStatementId: string;
   id: Generated<string>;
   name: string;
+  transactionDate: Generated<Timestamp>;
   updatedAt: Generated<Timestamp>;
   usdAmount: Numeric;
 }
