@@ -122,19 +122,19 @@ export function setupScheduledMessages(
 
     // Add reminder check scheduler
     cron.schedule(
-        "*/15 * * * *", // Check every 15 minutes
+        "* * * * *", // Check every minute
         async () => {
             try {
                 // Get upcoming reminders
                 const reminders = await remindersService.getUpcomingReminders();
 
-                // Find reminders that are due in the next 15 minutes
+                // Find reminders that are due in the next minute
                 const now = new Date();
-                const fifteenMinutesFromNow = new Date(now.getTime() + 15 * 60 * 1000);
+                const oneMinuteFromNow = new Date(now.getTime() + 1 * 60 * 1000);
 
                 const dueReminders = reminders.filter((reminder) => {
                     const reminderTime = new Date(reminder.reminderTime);
-                    return reminderTime >= now && reminderTime <= fifteenMinutesFromNow;
+                    return reminderTime >= now && reminderTime <= oneMinuteFromNow;
                 });
 
                 // Send notifications for due reminders
