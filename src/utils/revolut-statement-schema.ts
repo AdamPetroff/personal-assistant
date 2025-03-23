@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Transaction categories enum
-const TransactionCategoryEnum = z.enum([
+export const TransactionCategoryEnum = z.enum([
     "GROCERIES", // Food stores, supermarkets
     "RESTAURANT", // Dining out, cafes, bars
     "TRAVEL", // Transportation, flights, trains

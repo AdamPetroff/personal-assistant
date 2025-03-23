@@ -52,3 +52,5 @@ temp/
 
 # Optional REPL history
 .node_repl_history
+
+.gmail_token.json

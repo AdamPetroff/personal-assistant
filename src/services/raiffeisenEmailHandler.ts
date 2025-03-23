@@ -2,26 +2,12 @@ import { logger } from "../utils/logger";
 import { env } from "../config/constants";
 import GmailService, { Email, EmailMetadata } from "./gmail";
 import { FinanceSourceRepository } from "./database/repositories/FinanceSourceRepository";
+import { financeTransactionRepository } from "./database/repositories/FinanceTransactionRepository";
 import { LangchainService } from "./langchain";
 import { exchangeRateService } from "./exchangeRate";
 import { z } from "zod";
 import { DynamicStructuredTool } from "@langchain/core/tools";
-
-// Define transaction categories as enum
-export enum TransactionCategory {
-    Fitness = "fitness",
-    Dining = "dining",
-    Groceries = "groceries",
-    Transportation = "transportation",
-    Entertainment = "entertainment",
-    Shopping = "shopping",
-    Utilities = "utilities",
-    Housing = "housing",
-    Healthcare = "healthcare",
-    Education = "education",
-    Travel = "travel",
-    Other = "other"
-}
+import { TransactionCategory, TransactionCategoryEnum } from "../utils/revolut-statement-schema";
 
 // Interface to represent parsed transaction data
 interface RaiffeisenTransactionData {
@@ -50,10 +36,11 @@ const transactionSchema = z.object({
     merchantDetails: z.string().optional().describe("The merchant details (e.g., 'HULK GYM; Brno; CZE')"),
     remainingBalance: z.number().describe("The remaining account balance after the transaction"),
     currency: z.string().describe("The currency code (usually CZK)"),
-    category: z
-        .nativeEnum(TransactionCategory)
-        .describe("The category of the transaction based on the merchant or transaction details")
+    category: TransactionCategoryEnum.describe(
+        "The category of the transaction based on the merchant or transaction details"
+    )
 });
+
 export class RaiffeisenEmailHandler {
     private langchainService: LangchainService;
     private financeSourceRepository: FinanceSourceRepository;
@@ -141,7 +128,112 @@ export class RaiffeisenEmailHandler {
         const financeSource = await this.getOrCreateFinanceSource(transactionData.accountNumber);
 
         // Save the transaction data as a finance statement
-        await this.saveFinanceStatement(financeSource.id, transactionData);
+        const savedStatement = await this.saveFinanceStatement(financeSource.id, transactionData);
+
+        // Save the transaction data as a finance transaction
+        await this.saveFinanceTransaction(savedStatement.id, transactionData);
+    }
+
+    /**
+     * Save transaction data as a finance transaction
+     */
+    private async saveFinanceTransaction(
+        financeStatementId: string,
+        transactionData: RaiffeisenTransactionData
+    ): Promise<void> {
+        try {
+            // Convert amount to USD if not already in USD
+            let usdAmount = transactionData.transactionAmount;
+
+            if (transactionData.currency !== "USD") {
+                try {
+                    const convertedAmount = await exchangeRateService.convertCurrency(
+                        transactionData.transactionAmount,
+                        transactionData.currency,
+                        "USD"
+                    );
+                    usdAmount = convertedAmount.toNumber();
+                } catch (error) {
+                    logger.error(`Failed to convert ${transactionData.currency} to USD:`, error);
+                    // Keep original amount if conversion fails
+                }
+            }
+
+            // Create and save the finance transaction
+            await financeTransactionRepository.create(
+                financeStatementId,
+                transactionData.merchantDetails || transactionData.transactionType,
+                transactionData.transactionAmount,
+                transactionData.currency as any, // Cast to Currency type
+                usdAmount,
+                transactionData.category // No need to convert to uppercase as it's already in the correct format
+            );
+
+            logger.info(`Saved finance transaction for statement ${financeStatementId}`);
+        } catch (error) {
+            logger.error("Error saving finance transaction:", error);
+            throw new Error(`Failed to save finance transaction: ${error}`);
+        }
+    }
+
+    /**
+     * Save transaction data as a finance statement
+     */
+    private async saveFinanceStatement(financeSourceId: string, transactionData: RaiffeisenTransactionData) {
+        try {
+            // Get the finance source to determine its currency
+            const financeSource = await this.financeSourceRepository.getById(financeSourceId);
+
+            if (!financeSource) {
+                throw new Error(`Finance source with ID ${financeSourceId} not found`);
+            }
+
+            // Convert account balance to USD if not already in USD
+            let accountBalanceUsd = transactionData.remainingBalance;
+
+            if (financeSource.currency !== "USD") {
+                try {
+                    const convertedBalance = await exchangeRateService.convertCurrency(
+                        transactionData.remainingBalance,
+                        financeSource.currency,
+                        "USD"
+                    );
+                    accountBalanceUsd = convertedBalance.toNumber();
+                } catch (error) {
+                    logger.error(`Failed to convert ${financeSource.currency} to USD:`, error);
+                    // Keep original balance if conversion fails
+                }
+            }
+
+            // Create statement data structure
+            const statement = {
+                accountBalance: transactionData.remainingBalance,
+                accountBalanceUsd,
+                statementDate: transactionData.transactionDate,
+                data: {
+                    ...transactionData,
+                    // Convert transaction data to a format compatible with BankStatementData interface
+                    transactions: [
+                        {
+                            name: transactionData.merchantDetails || transactionData.transactionType,
+                            date: transactionData.transactionDate.toISOString().split("T")[0], // YYYY-MM-DD
+                            amount: transactionData.transactionAmount,
+                            category: transactionData.category
+                        }
+                    ]
+                }
+            };
+
+            // Save to database
+            const savedStatement = await this.financeSourceRepository.saveStatement(financeSourceId, statement);
+
+            logger.info(`Saved transaction data for account ${transactionData.accountNumber}`);
+
+            return savedStatement;
+        } catch (error) {
+            logger.error("Error saving finance statement:", error);
+            throw new Error(`Failed to save finance statement: ${error}`);
+        }
     }
 
     /**
@@ -225,67 +317,6 @@ Use the extractRaiffeisenTransaction tool to provide the structured data.`;
         } catch (error) {
             logger.error("Error getting or creating finance source:", error);
             throw new Error(`Failed to get or create finance source: ${error}`);
-        }
-    }
-
-    /**
-     * Save transaction data as a finance statement
-     */
-    private async saveFinanceStatement(
-        financeSourceId: string,
-        transactionData: RaiffeisenTransactionData
-    ): Promise<void> {
-        try {
-            // Get the finance source to determine its currency
-            const financeSource = await this.financeSourceRepository.getById(financeSourceId);
-
-            if (!financeSource) {
-                throw new Error(`Finance source with ID ${financeSourceId} not found`);
-            }
-
-            // Convert account balance to USD if not already in USD
-            let accountBalanceUsd = transactionData.remainingBalance;
-
-            if (financeSource.currency !== "USD") {
-                try {
-                    const convertedBalance = await exchangeRateService.convertCurrency(
-                        transactionData.remainingBalance,
-                        financeSource.currency,
-                        "USD"
-                    );
-                    accountBalanceUsd = convertedBalance.toNumber();
-                } catch (error) {
-                    logger.error(`Failed to convert ${financeSource.currency} to USD:`, error);
-                    // Keep original balance if conversion fails
-                }
-            }
-
-            // Create statement data structure
-            const statement = {
-                accountBalance: transactionData.remainingBalance,
-                accountBalanceUsd,
-                statementDate: transactionData.transactionDate,
-                data: {
-                    ...transactionData,
-                    // Convert transaction data to a format compatible with BankStatementData interface
-                    transactions: [
-                        {
-                            name: transactionData.merchantDetails || transactionData.transactionType,
-                            date: transactionData.transactionDate.toISOString().split("T")[0], // YYYY-MM-DD
-                            amount: transactionData.transactionAmount,
-                            category: transactionData.category
-                        }
-                    ]
-                }
-            };
-
-            // Save to database
-            await this.financeSourceRepository.saveStatement(financeSourceId, statement);
-
-            logger.info(`Saved transaction data for account ${transactionData.accountNumber}`);
-        } catch (error) {
-            logger.error("Error saving finance statement:", error);
-            throw new Error(`Failed to save finance statement: ${error}`);
         }
     }
 }
