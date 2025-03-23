@@ -21,6 +21,7 @@ import { initFinanceChartService } from "./services/chart/financeChartService";
 import { initRemindersService } from "./services/reminders";
 import { initTrelloService } from "./services/trello";
 import { initInterestService } from "./services/interestService";
+import { initFinanceAnalysisService } from "./services/financeAnalysisService";
 
 // Get port from environment variable or use default
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -43,6 +44,7 @@ async function startApp() {
         initRemindersService();
         initTrelloService();
         initInterestService();
+        initFinanceAnalysisService();
 
         // Interest service is auto-initialized via the import
         logger.info("Interest tracking service initialized");
