@@ -2,17 +2,68 @@ import gmailService from "../services/gmail";
 import { logger } from "../utils/logger";
 import path from "path";
 import fs from "fs";
+import readline from "readline";
+
+/**
+ * Create an interface for user input
+ */
+function createInterface() {
+    return readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+}
+
+/**
+ * Prompt for user input
+ */
+async function promptUser(question: string): Promise<string> {
+    const rl = createInterface();
+    return new Promise((resolve) => {
+        rl.question(question, (answer) => {
+            rl.close();
+            resolve(answer);
+        });
+    });
+}
+
+/**
+ * Handle authentication flow if needed
+ */
+async function handleAuthentication() {
+    if (!gmailService.isConfigured()) {
+        logger.info("Gmail service not configured properly. Starting authentication flow...");
+
+        // Generate auth URL
+        const authUrl = gmailService.getAuthUrl();
+        logger.info(`Please visit this URL to authenticate:\n${authUrl}`);
+
+        // Wait for the authorization code
+        const code = await promptUser("Enter the authorization code: ");
+
+        // Exchange code for tokens
+        const success = await gmailService.getTokensFromCode(code);
+
+        if (success) {
+            logger.info("Authentication successful!");
+        } else {
+            logger.error("Authentication failed. Please try again.");
+            process.exit(1);
+        }
+    }
+}
 
 /**
  * Test script to demonstrate the Gmail service functionality
  */
 async function main() {
     try {
-        // Check if Gmail service is configured
-        if (!gmailService.isConfigured()) {
-            logger.error("Gmail service is not properly configured. Please set the required environment variables.");
-            process.exit(1);
-        }
+        // Handle authentication if needed
+        await handleAuthentication();
+
+        // Force token refresh to demonstrate functionality
+        logger.info("Testing token refresh functionality...");
+        await gmailService.refreshTokens();
 
         // Fetch recent unread emails
         logger.info("Fetching recent unread emails...");

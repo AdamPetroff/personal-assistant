@@ -82,7 +82,6 @@
         "test-coinmarketcap": "ts-node src/scripts/test-coinmarketcap-service.ts",
         "token-manager": "ts-node src/scripts/tokenManager.ts",
         "crypto-portfolio": "ts-node src/scripts/cryptoPortfolio.ts",
-        "gmail": "ts-node src/scripts/gmail.ts",
         "test-chart": "ts-node src/scripts/testChartGeneration.ts",
         "process-raiffeisen-emails": "ts-node src/commands/processRaiffeisenEmails.ts",
         "process-xtb-emails": "ts-node src/commands/processXtbEmails.ts",
