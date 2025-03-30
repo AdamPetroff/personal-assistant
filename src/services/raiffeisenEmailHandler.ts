@@ -248,6 +248,14 @@ export class RaiffeisenEmailHandler {
             throw new Error("Email has no content");
         }
 
+        // Fetch all transaction categories to help with categorization
+        const transactionCategories = await financeTransactionRepository.getAllTransactionCategories();
+
+        // Format categories as a list of examples for the AI
+        const categoryExamples = transactionCategories
+            .map(({ name, category }) => `- "${name}" → ${category}`)
+            .join("\n");
+
         // Use LangChain with our extraction tool to parse the email
         const systemPrompt = `You are a financial data extraction assistant specialized in processing Czech bank notifications from Raiffeisen Bank.
         
@@ -265,6 +273,10 @@ Extract the following information from the bank notification email:
 11. Transaction category based on the merchant details or transaction type
 
 Be precise with the numerical values - make sure to convert string representations like "1.234,56" to number 1234.56 or "-150,00" to -150.
+
+Here are examples of transaction names and their proper categories to help with categorization:
+${categoryExamples}
+
 Use the extractRaiffeisenTransaction tool to provide the structured data.`;
 
         try {
