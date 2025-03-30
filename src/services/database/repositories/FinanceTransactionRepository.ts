@@ -99,15 +99,15 @@ export class FinanceTransactionRepository {
     /**
      * Get all transactions by category
      */
-    async getByCategory(category: TransactionCategory): Promise<FinanceTransactionModel[]> {
+    async getByCategory(categoryName: TransactionCategory): Promise<FinanceTransactionModel[]> {
         try {
             // Validate category
-            this.validateCategory(category);
+            this.validateCategory(categoryName);
 
             const results = await db
                 .selectFrom("finance_transaction")
                 .selectAll()
-                .where("category", "=", category)
+                .where("category", "=", categoryName)
                 .orderBy("transactionDate", "desc")
                 .execute();
 
@@ -125,37 +125,58 @@ export class FinanceTransactionRepository {
     /**
      * Update a transaction's category by transaction ID
      */
-    async updateCategory(transactionId: string, category: TransactionCategory): Promise<FinanceTransactionModel> {
+    async updateCategory(transactionId: string, categoryName: TransactionCategory): Promise<FinanceTransactionModel> {
         try {
             // Validate category
-            this.validateCategory(category);
+            this.validateCategory(categoryName);
 
-            const result = await db
-                .updateTable("finance_transaction")
-                .set({
-                    category,
-                    updatedAt: new Date()
-                })
+            // Get the transaction to retrieve its name
+            const transaction = await db
+                .selectFrom("finance_transaction")
+                .select(["name"])
                 .where("id", "=", transactionId)
-                .returning([
-                    "id",
-                    "financeStatementId",
-                    "name",
-                    "amount",
-                    "currency",
-                    "usdAmount",
-                    "category",
-                    "transactionDate",
-                    "createdAt",
-                    "updatedAt"
-                ])
                 .executeTakeFirstOrThrow();
 
-            return {
-                ...result,
-                amount: Number(result.amount),
-                usdAmount: Number(result.usdAmount)
-            } as FinanceTransactionModel;
+            // Start a transaction to ensure both operations succeed or fail together
+            return await db.transaction().execute(async (trx) => {
+                // 1. Update the category in finance_transaction table
+                const result = await trx
+                    .updateTable("finance_transaction")
+                    .set({
+                        category: categoryName,
+                        updatedAt: new Date()
+                    })
+                    .where("id", "=", transactionId)
+                    .returning([
+                        "id",
+                        "financeStatementId",
+                        "name",
+                        "amount",
+                        "currency",
+                        "usdAmount",
+                        "category",
+                        "transactionDate",
+                        "createdAt",
+                        "updatedAt"
+                    ])
+                    .executeTakeFirstOrThrow();
+
+                // 2. Create record in transaction_category table
+                await trx
+                    .insertInto("transaction_category")
+                    .values({
+                        transactionId,
+                        transactionName: transaction.name,
+                        category: categoryName
+                    })
+                    .execute();
+
+                return {
+                    ...result,
+                    amount: Number(result.amount),
+                    usdAmount: Number(result.usdAmount)
+                } as FinanceTransactionModel;
+            });
         } catch (error) {
             logger.error("Failed to update transaction category:", error);
             throw new Error("Failed to update transaction category in database");
@@ -269,6 +290,25 @@ export class FinanceTransactionRepository {
      */
     private validateCategory(category: string): void {
         TransactionCategoryEnum.parse(category);
+    }
+
+    /**
+     * Get all transaction category mappings
+     * Returns an array of transaction name and category pairs
+     */
+    async getAllTransactionCategories(): Promise<Array<{ name: string; category: string }>> {
+        try {
+            const results = await db
+                .selectFrom("transaction_category")
+                .select(["transactionName as name", "category"])
+                .orderBy("transactionName", "asc")
+                .execute();
+
+            return results as Array<{ name: string; category: string }>;
+        } catch (error) {
+            logger.error("Failed to fetch transaction categories:", error);
+            throw new Error("Failed to fetch transaction categories from database");
+        }
     }
 }
 

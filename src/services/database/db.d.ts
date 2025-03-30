@@ -116,6 +116,14 @@ export interface Token {
   updatedAt: Generated<Timestamp>;
 }
 
+export interface TransactionCategory {
+  category: string;
+  createdAt: Generated<Timestamp>;
+  id: Generated<string>;
+  transactionId: string;
+  transactionName: string;
+}
+
 export interface Wallet {
   address: string;
   createdAt: Generated<Timestamp>;
@@ -134,5 +142,6 @@ export interface DB {
   reminder: Reminder;
   task: Task;
   token: Token;
+  transaction_category: TransactionCategory;
   wallet: Wallet;
 }

@@ -127,16 +127,39 @@ export class RevolutStatementService {
         summary: string;
     }> {
         try {
+            // Fetch all transaction categories to help with categorization
+            const transactionCategories = await financeTransactionRepository.getAllTransactionCategories();
+
+            // Format categories as a list of examples for the AI
+            const categoryExamples = transactionCategories
+                .map(({ name, category }) => `- "${name}" → ${category}`)
+                .join("\n");
+
+            // Define the schema for extraction
+            const extractionSchema = z.object({
+                revolutStatement: RevolutStatementSchema,
+                summary: z
+                    .string()
+                    .describe(
+                        "A summary of the bank statement. Describe the time period covered by the statement and the total balance at the start and end of the period. Mention the biggest transactions"
+                    )
+            });
+
+            // Define the prompt for the AI, including category examples
+            const extractionPrompt = `You are an expert financial data extraction assistant specialized in processing Revolut bank statements. 
+Extract the statement details according to the provided schema. Pay close attention to transaction details, dates, amounts, currencies, and categorization.
+
+Here are examples of transaction descriptions and their proper categories to help with categorization:
+${categoryExamples}
+
+Ensure the output matches the requested schema precisely.
+Provide a summary including the statement period, start/end balances, and significant transactions.`;
+
+            // Call the langchain service with the schema and the custom prompt
             return await langchainService.extractDataFromPDF(
                 fileStream,
-                z.object({
-                    revolutStatement: RevolutStatementSchema,
-                    summary: z
-                        .string()
-                        .describe(
-                            "A summary of the bank statement. Describe the time period covered by the statement and the total balance at the start and end of the period. Mention the biggest transactions"
-                        )
-                })
+                extractionSchema,
+                extractionPrompt // Pass the custom prompt here
             );
         } catch (error) {
             logger.error("Error extracting data from Revolut statement PDF:", error);

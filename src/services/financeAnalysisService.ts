@@ -24,8 +24,8 @@ export interface IndividualTransaction {
 export interface TransactionTimeRangeAnalysis {
     startDate: Date;
     endDate: Date;
-    // totalSpending: number;
     totalUsdSpending: number;
+    totalCzkSpending: number;
     spendingByCategory: SpendingByCategory[];
     totalTransactions: number;
     individualTransactions?: IndividualTransaction[];
@@ -122,6 +122,9 @@ export class FinanceAnalysisService {
                 endDate,
                 // totalSpending: Number(totals?.totalAmount || 0),
                 totalUsdSpending: Number(totals?.totalUsdAmount || 0),
+                totalCzkSpending: Number(
+                    (await exchangeRateService.convertCurrency(totals?.totalUsdAmount || 0, "USD", "CZK")).toNumber()
+                ),
                 spendingByCategory,
                 totalTransactions: Number(totals?.totalTransactions || 0),
                 ...(individualTransactions && { individualTransactions })
