@@ -3,7 +3,7 @@ import { env } from "../config/constants";
 import GmailService, { Email, EmailMetadata } from "./gmail";
 import { FinanceSourceRepository } from "./database/repositories/FinanceSourceRepository";
 import { financeTransactionRepository } from "./database/repositories/FinanceTransactionRepository";
-import { LangchainService } from "./langchain";
+import { langchainService, LangchainService } from "./langchain";
 import { exchangeRateService } from "./exchangeRate";
 import { z } from "zod";
 import { DynamicStructuredTool } from "@langchain/core/tools";
@@ -54,8 +54,7 @@ export class RaiffeisenEmailHandler {
             throw new Error("OPENAI_API_KEY is required for email processing");
         }
 
-        // Create a LangchainService instance with o3-mini for better extraction accuracy
-        this.langchainService = LangchainService.createWithModel("o3-mini");
+        this.langchainService = langchainService;
         this.financeSourceRepository = new FinanceSourceRepository();
 
         // Create the structured tool for extracting transaction data

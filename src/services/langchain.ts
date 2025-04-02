@@ -1,4 +1,5 @@
 import { ChatOpenAI } from "@langchain/openai";
+import { ChatAnthropic } from "@langchain/anthropic";
 import { BaseMessageFields, ChatMessage, HumanMessage, MessageContent, SystemMessage } from "@langchain/core/messages";
 import { StructuredTool, tool } from "@langchain/core/tools";
 import { logger } from "../utils/logger";
@@ -12,24 +13,29 @@ import { parsePDF } from "../utils/pdfParser";
 export class LangchainService {
     private tools: StructuredTool[] = [];
     private handlers: Map<string, (parameters: any) => Promise<any>> = new Map();
-    private chatModel: ChatOpenAI;
+    private chatModelOpenAi: ChatOpenAI;
+    private chatModelAnthropic: ChatAnthropic;
+    private chatModel: ChatOpenAI | ChatAnthropic;
     private chat4oModel: ChatOpenAI;
 
     constructor() {
         if (!env.OPENAI_API_KEY) {
             throw new Error("OPENAI_API_KEY is required");
         }
-
-        this.chatModel = new ChatOpenAI({
+        this.chatModelOpenAi = new ChatOpenAI({
             openAIApiKey: env.OPENAI_API_KEY,
-            modelName: "o3-mini"
-            // temperature: 0
+            modelName: "o1-mini"
+        });
+        this.chatModelAnthropic = new ChatAnthropic({
+            anthropicApiKey: env.ANTHROPIC_API_KEY,
+            modelName: "claude-3-5-haiku-20241022"
         });
         this.chat4oModel = new ChatOpenAI({
             openAIApiKey: env.OPENAI_API_KEY,
             model: "gpt-4o"
-            // temperature: 0
         });
+
+        this.chatModel = this.chatModelAnthropic;
     }
 
     /**
@@ -37,8 +43,8 @@ export class LangchainService {
      */
     static createWithModel(modelName: string, temperature?: number): LangchainService {
         const service = new LangchainService();
-        service.chatModel = new ChatOpenAI({
-            openAIApiKey: env.OPENAI_API_KEY,
+        service.chatModel = new ChatAnthropic({
+            anthropicApiKey: env.ANTHROPIC_API_KEY,
             modelName: modelName,
             temperature: temperature ?? undefined
         });

@@ -2,7 +2,7 @@ import { logger } from "../utils/logger";
 import { env } from "../config/constants";
 import GmailService, { Email, EmailAttachment } from "./gmail";
 import { FinanceSourceRepository } from "./database/repositories/FinanceSourceRepository";
-import { LangchainService } from "./langchain";
+import { langchainService, LangchainService } from "./langchain";
 import { exchangeRateService } from "./exchangeRate";
 import { z } from "zod";
 import { DynamicStructuredTool } from "@langchain/core/tools";
@@ -103,8 +103,7 @@ export class XtbEmailHandler {
             apiKey: env.OPENAI_API_KEY
         });
 
-        // Create a LangchainService instance with o3-mini for better extraction accuracy
-        this.langchainService = LangchainService.createWithModel("o3-mini");
+        this.langchainService = langchainService;
         this.financeSourceRepository = new FinanceSourceRepository();
         this.fileService = new FileService();
 
