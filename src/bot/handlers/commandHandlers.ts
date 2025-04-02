@@ -83,6 +83,7 @@ export function setupCommandHandlers(
 - Use /addasset [symbol] to add a test asset
 - Use /listassets to see all tracked assets
 - Use /assethelp for asset-related commands
+- Use /web to open the web application
 - Use /help to show this help message
         `;
 
