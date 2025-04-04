@@ -1,11 +1,13 @@
 import dotenv from "dotenv";
-import { cleanEnv, str, bool } from "envalid";
+import { cleanEnv, str, bool, num } from "envalid";
 
 // Load environment variables from .env file
 dotenv.config();
 
 // Validate and clean environment variables
 export const env = cleanEnv(process.env, {
+    PORT: num({ default: 3000 }),
+
     TELEGRAM_BOT_TOKEN: str(),
     TRELLO_API_KEY: str(),
     TRELLO_TOKEN: str(),
@@ -58,13 +60,6 @@ export const env = cleanEnv(process.env, {
 
 // Export individual constants for easier access
 export const TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
-export const TRELLO_API_KEY = env.TRELLO_API_KEY;
-export const TRELLO_TOKEN = env.TRELLO_TOKEN;
-export const TRELLO_BOARD_ID = env.TRELLO_BOARD_ID;
-export const ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
-export const OPENAI_API_KEY = env.OPENAI_API_KEY;
-export const DATABASE_URL = env.DATABASE_URL;
-export const COIN_MARKET_CAP_API_KEY = env.COIN_MARKET_CAP_API_KEY;
 
 // Gmail API Constants
 export const GMAIL_CONFIG = {
@@ -88,9 +83,4 @@ export const LINEAR_LABELS = {
     REMINDER: "reminder",
     URGENT: "urgent",
     ROUTINE: "routine"
-};
-
-export const LINEAR_CUSTOM_FIELDS = {
-    DUE_DATE: "Due Date",
-    REMINDER_TIME: "Reminder Time"
 };
