@@ -96,7 +96,7 @@ export class ChartService {
             const minValue = 0; // Start from zero for better visualization
 
             // Draw chart title
-            ctx.font = "bold 16px Arial";
+            ctx.font = "bold 16px Arial, sans-serif";
             ctx.fillStyle = "black";
             ctx.textAlign = "center";
             ctx.fillText(title, width / 2, margin.top / 2);
@@ -296,7 +296,7 @@ export class ChartService {
             const minValue = 0; // Start from zero for better visualization
 
             // Draw chart title
-            ctx.font = "bold 16px Arial";
+            ctx.font = "bold 16px Arial, sans-serif";
             ctx.fillStyle = "black";
             ctx.textAlign = "center";
             ctx.fillText(title, width / 2, margin.top / 2);
@@ -557,7 +557,7 @@ export class ChartService {
             const minValue = 0; // Start from zero for better visualization
 
             // Draw chart title
-            ctx.font = "bold 16px Arial";
+            ctx.font = "bold 16px Arial, sans-serif";
             ctx.fillStyle = "black";
             ctx.textAlign = "center";
             ctx.fillText(title, width / 2, margin.top / 2);
