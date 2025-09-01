@@ -5,12 +5,8 @@ import { CryptoPortfolioRepository } from "../../services/database/repositories/
 
 /**
  * Generates a portfolio summary message with crypto and finance data
- * plus a chart for visualization
  */
-export async function generatePortfolioSummaryMessage(): Promise<{
-    text: string;
-    imageBuffer?: Buffer;
-} | null> {
+export async function generatePortfolioSummaryMessage(): Promise<string | null> {
     try {
         // Get crypto portfolio service
         const cryptoPortfolioService = getCryptoPortfolioService();
@@ -38,11 +34,6 @@ export async function generatePortfolioSummaryMessage(): Promise<{
         const totalFinanceValue = financeData.reduce((sum, statement) => sum + statement.accountBalanceUsd, 0);
         const totalAssetValue = totalCryptoValue + totalFinanceValue;
 
-        // Generate chart showing the data
-        // Use last 30 days for the chart
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 30);
-
         // Format the message text
         const messageText =
             `📊 *Asset Portfolio Summary*\n\n` +
@@ -59,13 +50,9 @@ export async function generatePortfolioSummaryMessage(): Promise<{
                 )
                 .join("\n")}`;
 
-        return {
-            text: messageText
-        };
+        return messageText;
     } catch (error) {
         logger.error("Failed to generate portfolio summary message:", error);
-        return {
-            text: "Failed to generate portfolio summary. Check logs for details."
-        };
+        return "Failed to generate portfolio summary. Check logs for details.";
     }
 }

@@ -18,7 +18,7 @@ interface ScheduledMessage {
 const adamChatId = 1958271265;
 
 /**
- * Send portfolio summary with chart to a specific chat
+ * Send portfolio summary to a specific chat
  */
 export async function sendPortfolioSummary(
     bot: TelegramBot,
@@ -26,21 +26,12 @@ export async function sendPortfolioSummary(
     chatId: number
 ): Promise<void> {
     try {
-        // Get the full result with potential image
-        const summaryResult = await generatePortfolioSummaryMessage();
-        if (!summaryResult) return;
+        // Get the portfolio summary text
+        const summaryText = await generatePortfolioSummaryMessage();
+        if (!summaryText) return;
 
-        // If we have an image buffer, send it with the message
-        if (summaryResult.imageBuffer) {
-            // Send the chart image with caption
-            await bot.sendPhoto(chatId, summaryResult.imageBuffer, {
-                caption: summaryResult.text,
-                parse_mode: "Markdown"
-            });
-        } else {
-            // Just send the text if no image
-            await sendMarkdownMessage(chatId, summaryResult.text);
-        }
+        // Send the text message
+        await sendMarkdownMessage(chatId, summaryText);
 
         logger.info(`Portfolio summary sent to ${chatId}`);
     } catch (error) {
@@ -137,7 +128,7 @@ export function setupScheduledMessages(
         }
     );
 
-    // Add portfolio summary scheduler (needs special handling for the chart)
+    // Add portfolio summary scheduler
     cron.schedule(
         "0 9 * * *", // Runs every day at 9AM
         async () => {
