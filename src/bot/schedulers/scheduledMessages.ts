@@ -4,9 +4,9 @@ import { conversationContextService } from "../../services/conversationContext";
 import cron from "node-cron";
 import { CoinMarketCapService } from "../../services/coinMarketCap";
 import { remindersService } from "../../services/reminders";
-import { langchainService } from "../../services/langchain";
+
 import { generatePortfolioSummaryMessage } from "./portfolioSummaryMessage";
-import { interestService } from "../../services/interestService";
+
 
 // Interface for scheduled messages
 interface ScheduledMessage {
@@ -81,41 +81,7 @@ export function setupScheduledMessages(
             },
             chatIds: [adamChatId]
         },
-        {
-            // Runs every day at 10 AM
-            cronExpression: "0 10 * * *",
-            // cronExpression: "*/1 * * * *", // every minute
-            messageGenerator: async () => {
-                try {
-                    // Get all interests from the database
-                    const interests = await interestService.getInterests();
 
-                    // Skip if no interests
-                    if (interests.length === 0) {
-                        console.log("No interests to explore today!");
-                        return null;
-                    }
-
-                    // Select a random interest
-                    const randomIndex = Math.floor(Math.random() * interests.length);
-                    const selectedInterest = interests[randomIndex];
-
-                    // Get information about the topic
-                    const topicInfo = await langchainService.getTopicInformation(
-                        selectedInterest.topic,
-                        selectedInterest.description || ""
-                    );
-
-                    return `📚 Daily Learning: *${selectedInterest.topic}*\n\n${topicInfo}\n\nHappy learning! 🎯`;
-                } catch (error) {
-                    if (error instanceof Error) {
-                        return `Failed to process daily interest: ${error.message}`;
-                    }
-                    return "Failed to process daily interest";
-                }
-            },
-            chatIds: [adamChatId]
-        }
     ];
 
     // Add reminder check scheduler
