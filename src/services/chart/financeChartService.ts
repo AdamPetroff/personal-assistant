@@ -53,8 +53,7 @@ function registerTotalPortfolioWorthIntent() {
             return (
                 summaryResult
                     ? {
-                          text: summaryResult.text,
-                          image: summaryResult.imageBuffer
+                          text: summaryResult
                       }
                     : {
                           text: "No portfolio summary available"
