@@ -1,12 +1,18 @@
+import TelegramBot from "node-telegram-bot-api";
 import { getCryptoPortfolioService } from "../../services/wallet/cryptoPortfolioService";
 import { financeSourceRepository } from "../../services/database/repositories/FinanceSourceRepository";
+import { generateUnifiedChart } from "../../services/chart/unifiedChartService";
 import { logger } from "../../utils/logger";
 import { CryptoPortfolioRepository } from "../../services/database/repositories/CryptoPortfolioRepository";
 
 /**
  * Generates a portfolio summary message with crypto and finance data
+ * plus a chart for visualization
  */
-export async function generatePortfolioSummaryMessage(): Promise<string | null> {
+export async function generatePortfolioSummaryMessage(): Promise<{
+    text: string;
+    imageBuffer?: Buffer;
+} | null> {
     try {
         // Get crypto portfolio service
         const cryptoPortfolioService = getCryptoPortfolioService();
@@ -34,6 +40,19 @@ export async function generatePortfolioSummaryMessage(): Promise<string | null> 
         const totalFinanceValue = financeData.reduce((sum, statement) => sum + statement.accountBalanceUsd, 0);
         const totalAssetValue = totalCryptoValue + totalFinanceValue;
 
+        // Generate chart showing the data
+        // Use last 30 days for the chart
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+
+        const chartBuffer = await generateUnifiedChart({
+            startDate,
+            title: "30-Day Asset Overview",
+            showCrypto: true,
+            showFinance: true,
+            showIndividualSources: false
+        });
+
         // Format the message text
         const messageText =
             `📊 *Asset Portfolio Summary*\n\n` +
@@ -50,9 +69,14 @@ export async function generatePortfolioSummaryMessage(): Promise<string | null> 
                 )
                 .join("\n")}`;
 
-        return messageText;
+        return {
+            text: messageText,
+            imageBuffer: chartBuffer
+        };
     } catch (error) {
         logger.error("Failed to generate portfolio summary message:", error);
-        return "Failed to generate portfolio summary. Check logs for details.";
+        return {
+            text: "Failed to generate portfolio summary. Check logs for details."
+        };
     }
 }
