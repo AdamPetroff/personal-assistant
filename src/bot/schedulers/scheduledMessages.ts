@@ -7,7 +7,6 @@ import { remindersService } from "../../services/reminders";
 
 import { generatePortfolioSummaryMessage } from "./portfolioSummaryMessage";
 
-
 // Interface for scheduled messages
 interface ScheduledMessage {
     cronExpression: string;
@@ -31,7 +30,7 @@ export async function sendPortfolioSummary(
         if (!summaryText) return;
 
         // Send the text message
-        await sendMarkdownMessage(chatId, summaryText);
+        await sendMarkdownMessage(chatId, summaryText.text);
 
         logger.info(`Portfolio summary sent to ${chatId}`);
     } catch (error) {
@@ -71,8 +70,7 @@ export function setupScheduledMessages(
                 }
             },
             chatIds: [adamChatId]
-        },
-
+        }
     ];
 
     // Add reminder check scheduler
