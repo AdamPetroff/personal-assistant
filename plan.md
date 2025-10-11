@@ -18,7 +18,6 @@
 3. Create Telegram Bot
 
     - Register bot with BotFather
-    - Implement basic bot setup using node-telegram-bot-api
     - Test basic message receiving/sending
 
 4. Set up Trello Integration

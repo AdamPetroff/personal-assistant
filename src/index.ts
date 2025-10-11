@@ -1,5 +1,4 @@
 import { logger } from "./utils/logger";
-import { bot } from "./bot";
 import "./services/twillio";
 import express from "express";
 import { initCoinMarketCapService } from "./services/coinMarketCap";
@@ -57,9 +56,6 @@ async function startApp() {
         scheduleRaiffeisenEmailProcessing();
         schedulePortfolioSnapshot();
         scheduleXtbEmailProcessing();
-
-        // Start the bot
-        await bot.startPolling();
 
         logger.info("Application started successfully");
     } catch (error) {
