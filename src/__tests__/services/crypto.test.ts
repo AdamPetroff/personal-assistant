@@ -33,14 +33,8 @@ jest.mock("../../services/binance", () => ({
 jest.mock("../../config/constants", () => ({
     env: {
         OPENAI_API_KEY: "test-openai-key",
-        ETHERSCAN_API_KEY: "test-etherscan-key",
-        BSCSCAN_API_KEY: "test-bscscan-key",
-        POLYGONSCAN_API_KEY: "test-polygonscan-key",
+        SCAN_API_KEY: "test-scan-api-key",
         SOLSCAN_API_KEY: "test-solscan-key",
-        ARBISCAN_API_KEY: "test-arbiscan-key",
-        OPTIMISTIC_ETHERSCAN_API_KEY: "test-optimistic-key",
-        SNOWTRACE_API_KEY: "test-snowtrace-key",
-        BASESCAN_API_KEY: "test-basescan-key",
         EXCHANGE_RATE_API_KEY: "test-exchange-rate-key",
         EXCHANGE_RATE_API_FREE: true,
         BINANCE_API_KEY: "test-binance-key",

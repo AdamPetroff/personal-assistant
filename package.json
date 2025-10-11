@@ -92,6 +92,9 @@
 		"process-xtb-emails": "ts-node src/commands/processXtbEmails.ts",
 		"test-xtb-processor": "ts-node src/scripts/test-xtb-email-processor.ts",
 		"test-portfolio-summary": "ts-node src/scripts/testPortfolioSummary.ts",
+		"test-wallet-balance": "ts-node src/scripts/test-wallet-balance.ts",
+		"debug-wallet-tokens": "ts-node src/scripts/debug-wallet-tokens.ts",
+		"test-single-wallet": "ts-node src/scripts/test-single-wallet-verbose.ts",
 		"test": "jest",
 		"test:watch": "jest --watch",
 		"test:coverage": "jest --coverage"

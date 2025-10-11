@@ -8,14 +8,10 @@ import { CoinMarketCapService } from "../coinMarketCap";
 import { TokenService } from "./tokenService";
 
 export class WalletBalanceService {
-    private readonly etherscanApiKey = env.ETHERSCAN_API_KEY;
-    private readonly bscscanApiKey = env.BSCSCAN_API_KEY;
-    private readonly polygonscanApiKey = env.POLYGONSCAN_API_KEY;
+    // V2 API uses unified Etherscan API key for all EVM chains
+    private readonly scanApiKey = env.SCAN_API_KEY;
+    // Solana uses separate API
     private readonly solscanApiKey = env.SOLSCAN_API_KEY;
-    private readonly arbiscanApiKey = env.ARBISCAN_API_KEY;
-    private readonly optimisticEtherscanApiKey = env.OPTIMISTIC_ETHERSCAN_API_KEY;
-    private readonly snowtraceApiKey = env.SNOWTRACE_API_KEY;
-    private readonly basescanApiKey = env.BASESCAN_API_KEY;
     private readonly coinMarketCapService: CoinMarketCapService;
     private readonly tokenService: TokenService;
 
@@ -25,55 +21,58 @@ export class WalletBalanceService {
     }
 
     /**
-     * Get the API URL for a specific blockchain explorer
+     * Get the chain ID for a specific blockchain network
+     * Required for V2 API
      */
-    private getApiUrl(network: BlockchainNetwork): string {
+    private getChainId(network: BlockchainNetwork): number {
         switch (network) {
             case BlockchainNetwork.ETHEREUM:
-                return "https://api.etherscan.io/api";
+                return 1;
             case BlockchainNetwork.BSC:
-                return "https://api.bscscan.com/api";
+                return 56;
             case BlockchainNetwork.POLYGON:
-                return "https://api.polygonscan.com/api";
+                return 137;
             case BlockchainNetwork.ARBITRUM:
-                return "https://api.arbiscan.io/api";
+                return 42161;
             case BlockchainNetwork.OPTIMISM:
-                return "https://api-optimistic.etherscan.io/api";
+                return 10;
             case BlockchainNetwork.AVALANCHE:
-                return "https://api.snowtrace.io/api";
-            case BlockchainNetwork.SOLANA:
-                return "https://public-api.solscan.io";
+                return 43114;
             case BlockchainNetwork.BASE:
-                return "https://api.basescan.org/api";
+                return 8453;
+            case BlockchainNetwork.SOLANA:
+                return 0; // Solana uses different API
             default:
                 throw new Error(`Unsupported network: ${network}`);
         }
     }
 
     /**
-     * Get the API key for a specific blockchain explorer
+     * Get the API URL for a specific blockchain explorer
+     * V2 API uses unified Etherscan endpoint for all EVM chains
+     */
+    private getApiUrl(network: BlockchainNetwork): string {
+        // Solana still uses its own API
+        if (network === BlockchainNetwork.SOLANA) {
+            return "https://public-api.solscan.io";
+        }
+
+        // All EVM chains use Etherscan V2 API
+        return "https://api.etherscan.io/v2/api";
+    }
+
+    /**
+     * Get the API key for blockchain explorer
+     * V2 API uses unified SCAN_API_KEY for all EVM chains
      */
     private getApiKey(network: BlockchainNetwork): string | undefined {
-        switch (network) {
-            case BlockchainNetwork.ETHEREUM:
-                return this.etherscanApiKey;
-            case BlockchainNetwork.BSC:
-                return this.bscscanApiKey;
-            case BlockchainNetwork.POLYGON:
-                return this.polygonscanApiKey;
-            case BlockchainNetwork.SOLANA:
-                return this.solscanApiKey;
-            case BlockchainNetwork.ARBITRUM:
-                return this.arbiscanApiKey;
-            case BlockchainNetwork.OPTIMISM:
-                return this.optimisticEtherscanApiKey;
-            case BlockchainNetwork.AVALANCHE:
-                return this.snowtraceApiKey;
-            case BlockchainNetwork.BASE:
-                return this.basescanApiKey;
-            default:
-                return undefined;
+        // For Solana, use dedicated API key
+        if (network === BlockchainNetwork.SOLANA) {
+            return this.solscanApiKey;
         }
+
+        // For all EVM chains, use unified SCAN_API_KEY
+        return this.scanApiKey;
     }
 
     /**
@@ -95,6 +94,7 @@ export class WalletBalanceService {
 
             // For EVM-compatible chains
             const tokenBalances: TokenBalance[] = [];
+            const chainId = this.getChainId(network);
 
             // Get tokens for this network from the database
             const networksTokens = await this.tokenService.getTokensByNetwork(network);
@@ -104,6 +104,7 @@ export class WalletBalanceService {
                 try {
                     const response = await axios.get(apiUrl, {
                         params: {
+                            chainid: chainId,
                             module: "account",
                             action: "tokenbalance",
                             address,
@@ -152,9 +153,11 @@ export class WalletBalanceService {
         try {
             const apiUrl = this.getApiUrl(network);
             const apiKey = this.getApiKey(network);
+            const chainId = this.getChainId(network);
 
             const response = await axios.get(apiUrl, {
                 params: {
+                    chainid: chainId,
                     module: "account",
                     action: "balance",
                     address,

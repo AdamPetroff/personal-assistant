@@ -26,15 +26,9 @@ export const env = cleanEnv(process.env, {
     GMAIL_REFRESH_TOKEN: str({ default: "" }),
     GMAIL_REDIRECT_URI: str({ default: "https://developers.google.com/oauthplayground" }),
 
-    // Blockchain explorer API keys (optional but validated if present)
-    ETHERSCAN_API_KEY: str({ default: "" }),
-    BSCSCAN_API_KEY: str({ default: "" }),
-    POLYGONSCAN_API_KEY: str({ default: "" }),
-    SOLSCAN_API_KEY: str({ default: "" }),
-    ARBISCAN_API_KEY: str({ default: "" }),
-    OPTIMISTIC_ETHERSCAN_API_KEY: str({ default: "" }),
-    SNOWTRACE_API_KEY: str({ default: "" }),
-    BASESCAN_API_KEY: str({ default: "" }),
+    // Blockchain explorer API keys
+    SCAN_API_KEY: str({ default: "" }), // Unified V2 API key for all Etherscan family explorers (EVM chains)
+    SOLSCAN_API_KEY: str({ default: "" }), // Solana uses separate API
 
     // CoinMarketCap API key
     COIN_MARKET_CAP_API_KEY: str(),

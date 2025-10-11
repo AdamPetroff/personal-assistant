@@ -22,15 +22,14 @@ The Wallet Holdings Feature allows you to track the token balances and total val
 1. Add your blockchain explorer API keys to the `.env` file:
 
     ```
-    ETHERSCAN_API_KEY=your_etherscan_api_key
-    BSCSCAN_API_KEY=your_bscscan_api_key
-    POLYGONSCAN_API_KEY=your_polygonscan_api_key
+    # Unified Etherscan V2 API key for all EVM chains (Ethereum, BSC, Polygon, Arbitrum, Optimism, Avalanche, Base)
+    SCAN_API_KEY=your_etherscan_api_key
+    
+    # Solana uses a separate API
     SOLSCAN_API_KEY=your_solscan_api_key
-    ARBISCAN_API_KEY=your_arbiscan_api_key
-    OPTIMISTIC_ETHERSCAN_API_KEY=your_optimistic_etherscan_api_key
-    SNOWTRACE_API_KEY=your_snowtrace_api_key
-    BASESCAN_API_KEY=your_basescan_api_key
     ```
+    
+    Note: Get your free API key from [Etherscan.io](https://etherscan.io/apis) - it works for all supported EVM chains.
 
 2. Add your wallet addresses to the `.env` file using the following format:
 

@@ -107,14 +107,8 @@ jest.mock("../../services/wallet/balanceService", () => {
 // Mock environment variables
 jest.mock("../../config/constants", () => ({
     env: {
-        ETHERSCAN_API_KEY: "mock-etherscan-key",
-        BSCSCAN_API_KEY: "mock-bscscan-key",
-        POLYGONSCAN_API_KEY: "mock-polygonscan-key",
+        SCAN_API_KEY: "mock-scan-api-key",
         SOLSCAN_API_KEY: "mock-solscan-key",
-        ARBISCAN_API_KEY: "mock-arbiscan-key",
-        OPTIMISTIC_ETHERSCAN_API_KEY: "mock-optimistic-key",
-        SNOWTRACE_API_KEY: "mock-snowtrace-key",
-        BASESCAN_API_KEY: "mock-basescan-key",
         OPENAI_API_KEY: "mock-openai-key",
         COIN_MARKET_CAP_API_KEY: "mock-cmc-key"
     }
