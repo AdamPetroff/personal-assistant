@@ -19,14 +19,4 @@ router.get("/chart-data", async (req, res) => {
     await portfolioController.getChartData(req, res);
 });
 
-// Generate chart image and return path/URL
-router.get("/chart-image", async (req, res) => {
-    await portfolioController.generateChartImage(req, res);
-});
-
-// Generate and serve chart image directly
-router.get("/chart-image/view", async (req, res) => {
-    await portfolioController.serveChartImage(req, res);
-});
-
 export default router;

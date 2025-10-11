@@ -12,7 +12,6 @@ import { initCryptoService } from "./services/crypto";
 import { scheduleRaiffeisenEmailProcessing } from "./cron/raiffeisenEmailProcessor";
 import { schedulePortfolioSnapshot } from "./cron/portfolioSnapshotProcessor";
 import { scheduleXtbEmailProcessing } from "./cron/xtbEmailProcessor";
-import { initFinanceChartService } from "./services/chart/financeChartService";
 import { initRemindersService } from "./services/reminders";
 import { initTrelloService } from "./services/trello";
 import { initInterestService } from "./services/interestService";
@@ -34,7 +33,6 @@ async function startApp() {
         initWalletService();
         initBinanceService();
         initCryptoService();
-        initFinanceChartService();
         initRemindersService();
         initTrelloService();
         initInterestService();

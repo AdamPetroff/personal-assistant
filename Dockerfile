@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
 # Use Debian bullseye which has OpenSSL 3.0.x
-ARG NODE_VERSION=20.18.0
+ARG NODE_VERSION=22.18.0
 FROM node:${NODE_VERSION}-bullseye-slim AS base
 
 LABEL fly_launch_runtime="Node.js"
@@ -21,7 +21,7 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3 openssl
 
 # Install node modules
-COPY package.json ./
+COPY package.json package-lock.json ./
 RUN npm install --include=dev
 
 # Copy application code

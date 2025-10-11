@@ -116,46 +116,6 @@ program
         }
     });
 
-// Command to generate chart image
-program
-    .command("generate-chart")
-    .description("Generate a chart image for portfolio value over time")
-    .option("-d, --days <number>", "Number of days to include", "30")
-    .option("-w, --width <number>", "Chart width in pixels", "800")
-    .option("-h, --height <number>", "Chart height in pixels", "400")
-    .option("-t, --title <string>", "Chart title")
-    .option("-o, --output <path>", "Output directory path", "uploads/charts")
-    .option("-f, --filename <string>", "Output filename (without extension)")
-    .action(async (options) => {
-        try {
-            const days = parseInt(options.days, 10);
-            const width = parseInt(options.width, 10);
-            const height = parseInt(options.height, 10);
-
-            logger.info(`Generating chart for the last ${days} days...`);
-
-            const portfolioService = getCryptoPortfolioService();
-            const fileName = options.filename ? `${options.filename}.png` : undefined;
-
-            const imagePath = await portfolioService.generateChartImage(days, {
-                width,
-                height,
-                title: options.title,
-                outputPath: options.output,
-                fileName
-            });
-
-            logger.info(`Chart generated successfully!`);
-            logger.info(`Chart saved to: ${imagePath}`);
-
-            // Display the path to the image file
-            console.log(`\nChart image saved to: ${imagePath}\n`);
-        } catch (error) {
-            logger.error("Failed to generate chart image:", error);
-            process.exit(1);
-        }
-    });
-
 // Command to cleanup old reports
 program
     .command("cleanup")

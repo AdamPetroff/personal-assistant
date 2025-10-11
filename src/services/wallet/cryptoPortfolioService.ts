@@ -1,13 +1,11 @@
-import { WalletReport } from "./types";
 import { WalletService } from "./walletService";
 import { binanceService, initBinanceService } from "../binance";
 import {
     CryptoPortfolioRepository,
-    CryptoPortfolioReportData,
-    PortfolioChartDataPoint
+    type CryptoPortfolioReportData,
+    type PortfolioChartDataPoint
 } from "../database/repositories/CryptoPortfolioRepository";
 import { logger } from "../../utils/logger";
-import { getChartService } from "../chart/chartService";
 
 // Interface for Binance balance
 interface ProcessedBalance {
@@ -132,50 +130,6 @@ export class CryptoPortfolioService {
         } catch (error) {
             logger.error("Failed to get portfolio chart data:", error);
             throw new Error("Failed to get portfolio chart data");
-        }
-    }
-
-    /**
-     * Generate a portfolio chart image for the specified time period
-     * @param days Number of days to include in the chart
-     * @param options Chart generation options
-     * @returns Path to the generated chart image
-     */
-    async generateChartImage(
-        days = 30,
-        options: {
-            width?: number;
-            height?: number;
-            title?: string;
-            outputPath?: string;
-            fileName?: string;
-        } = {}
-    ): Promise<string> {
-        try {
-            logger.info(`Generating portfolio chart image for the last ${days} days...`);
-
-            // Get chart data
-            const chartData = await this.getChartData(days);
-
-            if (chartData.length === 0) {
-                throw new Error("No portfolio data found for the specified period");
-            }
-
-            // Set default title with date range
-            if (!options.title) {
-                const startDate = new Date(chartData[0].timestamp);
-                const endDate = new Date(chartData[chartData.length - 1].timestamp);
-                options.title = `Crypto Portfolio Value (${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()})`;
-            }
-
-            // Generate chart image
-            const chartService = getChartService();
-            const imagePath = await chartService.generateCryptoPortfolioLineChart(chartData, options);
-
-            return imagePath;
-        } catch (error) {
-            logger.error("Failed to generate portfolio chart image:", error);
-            throw new Error("Failed to generate portfolio chart image");
         }
     }
 

@@ -1,17 +1,13 @@
-import TelegramBot from "node-telegram-bot-api";
 import { getCryptoPortfolioService } from "../../services/wallet/cryptoPortfolioService";
 import { financeSourceRepository } from "../../services/database/repositories/FinanceSourceRepository";
-import { generateUnifiedChart } from "../../services/chart/unifiedChartService";
 import { logger } from "../../utils/logger";
 import { CryptoPortfolioRepository } from "../../services/database/repositories/CryptoPortfolioRepository";
 
 /**
  * Generates a portfolio summary message with crypto and finance data
- * plus a chart for visualization
  */
 export async function generatePortfolioSummaryMessage(): Promise<{
     text: string;
-    imageBuffer?: Buffer;
 } | null> {
     try {
         // Get crypto portfolio service
@@ -40,19 +36,6 @@ export async function generatePortfolioSummaryMessage(): Promise<{
         const totalFinanceValue = financeData.reduce((sum, statement) => sum + statement.accountBalanceUsd, 0);
         const totalAssetValue = totalCryptoValue + totalFinanceValue;
 
-        // Generate chart showing the data
-        // Use last 30 days for the chart
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 30);
-
-        const chartBuffer = await generateUnifiedChart({
-            startDate,
-            title: "30-Day Asset Overview",
-            showCrypto: true,
-            showFinance: true,
-            showIndividualSources: false
-        });
-
         // Format the message text
         const messageText =
             `📊 *Asset Portfolio Summary*\n\n` +
@@ -70,8 +53,7 @@ export async function generatePortfolioSummaryMessage(): Promise<{
                 .join("\n")}`;
 
         return {
-            text: messageText,
-            imageBuffer: chartBuffer
+            text: messageText
         };
     } catch (error) {
         logger.error("Failed to generate portfolio summary message:", error);
