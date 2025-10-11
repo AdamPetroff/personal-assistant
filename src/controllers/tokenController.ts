@@ -26,6 +26,15 @@ export class TokenController {
         }
     }
 
+    async getAllTokensData() {
+        try {
+            return await this.tokenService.getAllTokens();
+        } catch (error) {
+            logger.error("Error getting all tokens:", error);
+            throw new Error("Failed to get tokens");
+        }
+    }
+
     /**
      * Get tokens by network
      */
@@ -44,6 +53,19 @@ export class TokenController {
         } catch (error) {
             logger.error("Error getting tokens by network:", error);
             res.status(500).json({ success: false, error: "Failed to get tokens" });
+        }
+    }
+
+    async getTokensByNetworkData(network: string) {
+        if (!Object.values(BlockchainNetwork).includes(network as BlockchainNetwork)) {
+            throw new Error("Invalid network");
+        }
+
+        try {
+            return await this.tokenService.getTokensByNetwork(network as BlockchainNetwork);
+        } catch (error) {
+            logger.error("Error getting tokens by network:", error);
+            throw new Error("Failed to get tokens");
         }
     }
 
@@ -97,6 +119,33 @@ export class TokenController {
         }
     }
 
+    async addTokenData(body: {
+        contractAddress: string;
+        network: BlockchainNetwork;
+        symbol: string;
+        name: string;
+        decimals: number;
+    }) {
+        if (!body.contractAddress || !body.network || !body.symbol || !body.name || body.decimals === undefined) {
+            throw new Error("Missing required fields: contractAddress, network, symbol, name, decimals");
+        }
+
+        if (!Object.values(BlockchainNetwork).includes(body.network)) {
+            throw new Error("Invalid network");
+        }
+
+        if (typeof body.decimals !== "number" || body.decimals < 0 || !Number.isInteger(body.decimals)) {
+            throw new Error("Decimals must be a non-negative integer");
+        }
+
+        try {
+            return await this.tokenService.addToken(body);
+        } catch (error) {
+            logger.error("Error adding token:", error);
+            throw error;
+        }
+    }
+
     /**
      * Update a token
      */
@@ -144,6 +193,39 @@ export class TokenController {
         }
     }
 
+    async updateTokenData(
+        id: string,
+        body: Partial<{
+            contractAddress: string;
+            network: BlockchainNetwork;
+            symbol: string;
+            name: string;
+            decimals: number;
+        }>
+    ) {
+        if (!body.contractAddress && !body.network && !body.symbol && !body.name && body.decimals === undefined) {
+            throw new Error("At least one field must be provided to update");
+        }
+
+        if (body.network && !Object.values(BlockchainNetwork).includes(body.network)) {
+            throw new Error("Invalid network");
+        }
+
+        if (
+            body.decimals !== undefined &&
+            (typeof body.decimals !== "number" || body.decimals < 0 || !Number.isInteger(body.decimals))
+        ) {
+            throw new Error("Decimals must be a non-negative integer");
+        }
+
+        try {
+            return await this.tokenService.updateToken(id, body);
+        } catch (error) {
+            logger.error("Error updating token:", error);
+            throw new Error("Failed to update token");
+        }
+    }
+
     /**
      * Delete a token
      */
@@ -160,6 +242,19 @@ export class TokenController {
         } catch (error) {
             logger.error("Error deleting token:", error);
             res.status(500).json({ success: false, error: "Failed to delete token" });
+        }
+    }
+
+    async deleteTokenData(id: string) {
+        try {
+            const success = await this.tokenService.deleteToken(id);
+            if (!success) {
+                throw new Error("Token not found");
+            }
+            return { success: true, message: "Token deleted successfully" };
+        } catch (error) {
+            logger.error("Error deleting token:", error);
+            throw new Error("Failed to delete token");
         }
     }
 }

@@ -64,4 +64,31 @@ export class PortfolioController {
             return res.status(500).json({ message: "Failed to get portfolio chart data" });
         }
     }
+
+    async getLatestReportWithData() {
+        const portfolioService = getCryptoPortfolioService();
+        const report = await portfolioService.getLatestReport();
+
+        if (!report) {
+            throw new Error("No portfolio reports found");
+        }
+
+        return report;
+    }
+
+    async generateReportWithData() {
+        const portfolioService = getCryptoPortfolioService();
+        return portfolioService.generateAndSaveReport();
+    }
+
+    async getChartDataWithData(days: number = 30) {
+        const portfolioService = getCryptoPortfolioService();
+        const chartData = await portfolioService.getChartData(days);
+
+        if (chartData.length === 0) {
+            throw new Error("No portfolio data found for the specified period");
+        }
+
+        return chartData;
+    }
 }

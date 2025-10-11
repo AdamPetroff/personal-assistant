@@ -7,8 +7,11 @@
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true
+		"forceConsistentCasingInFileNames": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"resolveJsonModule": true
 	},
-	"include": ["src/**/*", "src/migrations"],
+	"include": ["src/**/*", "src/migrations", "tsoa.json"],
 	"exclude": ["node_modules"]
 }

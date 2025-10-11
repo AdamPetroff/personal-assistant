@@ -1,8 +1,5 @@
-import { tool } from "@langchain/core/tools";
-import { z } from "zod";
 import { logger } from "../utils/logger";
 import { databaseService } from "./database";
-import { langchainService } from "./langchain";
 
 export class RemindersService {
     /**
@@ -73,66 +70,5 @@ export class RemindersService {
 export const remindersService = new RemindersService();
 
 export function initRemindersService() {
-    // Create LangChain tools
-    const createReminderTool = tool(
-        async ({ title, reminderTime, description }) => {
-            return remindersService.createReminder(title, new Date(reminderTime), description);
-        },
-        {
-            name: "create_reminder",
-            description: "Set a reminder for a specific date and time",
-            schema: z.object({
-                title: z.string().describe("What to be reminded about"),
-                reminderTime: z.string().describe("ISO date-time string for when to send the reminder"),
-                description: z.string().optional().describe("Additional details about the reminder")
-            })
-        }
-    );
-
-    const getUpcomingRemindersTool = tool(
-        async () => {
-            return remindersService.getUpcomingReminders();
-        },
-        {
-            name: "get_upcoming_reminders",
-            description: "Get all upcoming reminders that are not completed",
-            schema: z.object({})
-        }
-    );
-
-    const completeReminderTool = tool(
-        async ({ reminderId }) => {
-            return remindersService.updateReminderCompletion(reminderId, true);
-        },
-        {
-            name: "complete_reminder",
-            description: "Mark a reminder as complete",
-            schema: z.object({
-                reminderId: z.string().describe("The ID of the reminder to mark as complete")
-            })
-        }
-    );
-
-    const deleteReminderTool = tool(
-        async ({ reminderId }) => {
-            return remindersService.deleteReminder(reminderId);
-        },
-        {
-            name: "delete_reminder",
-            description: "Delete a reminder",
-            schema: z.object({
-                reminderId: z.string().describe("The ID of the reminder to delete")
-            })
-        }
-    );
-
-    // Register all reminder tools with LangChain service
-    langchainService.registerTools([
-        createReminderTool,
-        getUpcomingRemindersTool,
-        completeReminderTool,
-        deleteReminderTool
-    ]);
-
     return remindersService;
 }

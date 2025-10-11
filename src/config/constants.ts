@@ -12,6 +12,7 @@ export const env = cleanEnv(process.env, {
     TRELLO_API_KEY: str(),
     TRELLO_TOKEN: str(),
     TRELLO_BOARD_ID: str(),
+    TRELLO_DEFAULT_LIST_ID: str({ default: "" }),
     ANTHROPIC_API_KEY: str(),
     OPENAI_API_KEY: str(),
     TWILIO_ACCOUNT_SID: str(),

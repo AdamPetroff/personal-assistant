@@ -61,6 +61,7 @@
 		"supertest": "^6.3.4",
 		"ts-jest": "^29.1.2",
 		"ts-node": "latest",
+		"tsoa": "^6.6.0",
 		"typescript": "latest"
 	},
 	"scripts": {
@@ -71,6 +72,9 @@
 		"start-ts": "ts-node src/index.ts",
 		"start": "node dist/index.js",
 		"build": "tsc",
+		"tsoa:routes": "tsoa routes",
+		"tsoa:spec": "tsoa spec",
+		"tsoa": "npm run tsoa:routes && npm run tsoa:spec",
 		"docker:build": "docker build -t personal-assistant:latest .",
 		"docker:run": "docker run -p 80:80 --env-file .env personal-assistant:latest",
 		"docker:build-and-run": "npm run docker:build && npm run docker:run",

@@ -1,0 +1,2204 @@
+{
+	"openapi": "3.0.0",
+	"components": {
+		"examples": {},
+		"headers": {},
+		"parameters": {},
+		"requestBodies": {},
+		"responses": {},
+		"schemas": {
+			"TrelloCard": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"desc": {
+						"type": "string"
+					},
+					"due": {
+						"type": "string",
+						"nullable": true
+					},
+					"dueComplete": {
+						"type": "boolean"
+					},
+					"idList": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"desc",
+					"due",
+					"dueComplete",
+					"idList"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateTaskRequest": {
+				"properties": {
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"dueDate": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"title"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateMultipleTasksRequest": {
+				"properties": {
+					"tasks": {
+						"items": {
+							"$ref": "#/components/schemas/CreateTaskRequest"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"tasks"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BlockchainNetwork": {
+				"description": "Supported blockchain networks",
+				"enum": [
+					"ethereum",
+					"bsc",
+					"polygon",
+					"solana",
+					"arbitrum",
+					"optimism",
+					"avalanche",
+					"base"
+				],
+				"type": "string"
+			},
+			"TokenInfo": {
+				"description": "Token info interface for tracking specific tokens",
+				"properties": {
+					"contractAddress": {
+						"type": "string"
+					},
+					"network": {
+						"$ref": "#/components/schemas/BlockchainNetwork"
+					},
+					"symbol": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"decimals": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"contractAddress",
+					"network",
+					"symbol",
+					"name",
+					"decimals"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateTokenBody": {
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"symbol": {
+						"type": "string"
+					},
+					"network": {
+						"type": "string"
+					},
+					"contractAddress": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"name",
+					"symbol",
+					"network"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Partial_CreateTokenBody_": {
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"symbol": {
+						"type": "string"
+					},
+					"network": {
+						"type": "string"
+					},
+					"contractAddress": {
+						"type": "string"
+					}
+				},
+				"type": "object",
+				"description": "Make all properties in T optional"
+			},
+			"CreateReminderRequest": {
+				"properties": {
+					"title": {
+						"type": "string"
+					},
+					"reminderTime": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"title",
+					"reminderTime"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PortfolioChartDataPoint": {
+				"description": "Interface for chart data point",
+				"properties": {
+					"timestamp": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"totalValueUsd": {
+						"type": "number",
+						"format": "double"
+					},
+					"walletsValueUsd": {
+						"type": "number",
+						"format": "double"
+					},
+					"exchangeValueUsd": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"timestamp",
+					"totalValueUsd",
+					"walletsValueUsd",
+					"exchangeValueUsd"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TrackInterestRequest": {
+				"properties": {
+					"topic": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"topic"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Currency": {
+				"type": "string",
+				"enum": [
+					"CZK",
+					"EUR",
+					"USD"
+				]
+			},
+			"SpendingByCategory": {
+				"properties": {
+					"category": {
+						"type": "string"
+					},
+					"totalUsdAmount": {
+						"type": "number",
+						"format": "double"
+					},
+					"transactionCount": {
+						"type": "number",
+						"format": "double"
+					},
+					"currency": {
+						"$ref": "#/components/schemas/Currency"
+					}
+				},
+				"required": [
+					"category",
+					"totalUsdAmount",
+					"transactionCount"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"IndividualTransaction": {
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"usdAmount": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"name",
+					"usdAmount"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TransactionTimeRangeAnalysis": {
+				"properties": {
+					"startDate": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"endDate": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"totalUsdSpending": {
+						"type": "number",
+						"format": "double"
+					},
+					"totalCzkSpending": {
+						"type": "number",
+						"format": "double"
+					},
+					"spendingByCategory": {
+						"items": {
+							"$ref": "#/components/schemas/SpendingByCategory"
+						},
+						"type": "array"
+					},
+					"totalTransactions": {
+						"type": "number",
+						"format": "double"
+					},
+					"individualTransactions": {
+						"items": {
+							"$ref": "#/components/schemas/IndividualTransaction"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"startDate",
+					"endDate",
+					"totalUsdSpending",
+					"totalCzkSpending",
+					"spendingByCategory",
+					"totalTransactions"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AnalyzeFinancesRequest": {
+				"properties": {
+					"startDate": {
+						"type": "string"
+					},
+					"endDate": {
+						"type": "string"
+					},
+					"includeZeroAmounts": {
+						"type": "boolean"
+					},
+					"expanded": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"startDate",
+					"endDate"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ComparePeriodsRequest": {
+				"properties": {
+					"firstPeriodStart": {
+						"type": "string"
+					},
+					"firstPeriodEnd": {
+						"type": "string"
+					},
+					"secondPeriodStart": {
+						"type": "string"
+					},
+					"secondPeriodEnd": {
+						"type": "string"
+					},
+					"includeZeroAmounts": {
+						"type": "boolean"
+					},
+					"expanded": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"firstPeriodStart",
+					"firstPeriodEnd",
+					"secondPeriodStart",
+					"secondPeriodEnd"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ConvertCurrencyRequest": {
+				"properties": {
+					"amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"fromCurrency": {
+						"type": "string"
+					},
+					"toCurrency": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"amount",
+					"fromCurrency",
+					"toCurrency"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TokenDataRequest": {
+				"properties": {
+					"contractAddress": {
+						"type": "string"
+					},
+					"network": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"contractAddress",
+					"network"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CryptoPriceRequest": {
+				"properties": {
+					"symbol": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"symbol"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TokenDetails": {
+				"properties": {
+					"id": {
+						"type": "number",
+						"format": "double"
+					},
+					"name": {
+						"type": "string"
+					},
+					"symbol": {
+						"type": "string"
+					},
+					"category": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"logo": {
+						"type": "string"
+					},
+					"subreddit": {
+						"type": "string"
+					},
+					"notice": {
+						"type": "string"
+					},
+					"tags": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"tag_names": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"tag_groups": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"urls": {
+						"properties": {
+							"announcement": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"source_code": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"technical_doc": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"reddit": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"explorer": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"facebook": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"chat": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"message_board": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"twitter": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"website": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							}
+						},
+						"required": [
+							"announcement",
+							"source_code",
+							"technical_doc",
+							"reddit",
+							"explorer",
+							"facebook",
+							"chat",
+							"message_board",
+							"twitter",
+							"website"
+						],
+						"type": "object"
+					},
+					"platform": {
+						"properties": {
+							"token_address": {
+								"type": "string"
+							},
+							"slug": {
+								"type": "string"
+							},
+							"symbol": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"token_address",
+							"slug",
+							"symbol",
+							"name",
+							"id"
+						],
+						"type": "object"
+					},
+					"date_added": {
+						"type": "string"
+					},
+					"twitter_username": {
+						"type": "string"
+					},
+					"is_hidden": {
+						"type": "number",
+						"format": "double"
+					},
+					"date_launched": {
+						"type": "string"
+					},
+					"contract_address": {
+						"items": {
+							"properties": {
+								"platform": {
+									"properties": {
+										"coin": {
+											"properties": {
+												"slug": {
+													"type": "string"
+												},
+												"symbol": {
+													"type": "string"
+												},
+												"name": {
+													"type": "string"
+												},
+												"id": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"slug",
+												"symbol",
+												"name",
+												"id"
+											],
+											"type": "object"
+										},
+										"name": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"coin",
+										"name"
+									],
+									"type": "object"
+								},
+								"contract_address": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"platform",
+								"contract_address"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					},
+					"self_reported_circulating_supply": {
+						"type": "number",
+						"format": "double"
+					},
+					"self_reported_tags": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"self_reported_market_cap": {
+						"type": "number",
+						"format": "double"
+					},
+					"infinite_supply": {
+						"type": "boolean"
+					},
+					"rank": {
+						"type": "number",
+						"format": "double"
+					},
+					"is_active": {
+						"type": "number",
+						"format": "double"
+					},
+					"contractAddress": {
+						"type": "string"
+					},
+					"network": {
+						"$ref": "#/components/schemas/BlockchainNetwork"
+					},
+					"networkId": {
+						"type": "number",
+						"format": "double"
+					},
+					"decimals": {
+						"type": "number",
+						"format": "double"
+					},
+					"onChainSymbol": {
+						"type": "string"
+					},
+					"onChainName": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"symbol",
+					"slug",
+					"rank",
+					"is_active",
+					"category"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TokenDetailsRequest": {
+				"properties": {
+					"symbol": {
+						"type": "string"
+					},
+					"network": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"symbol",
+					"network"
+				],
+				"type": "object",
+				"additionalProperties": false
+			}
+		},
+		"securitySchemes": {}
+	},
+	"info": {
+		"title": "your-node-app-name",
+		"version": "1.0.0",
+		"description": "Describe your app here.",
+		"contact": {
+			"name": "author_name"
+		}
+	},
+	"paths": {
+		"/wallet/balance": {
+			"get": {
+				"operationId": "GetWalletBalance",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Wallet"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/wallet/holdings": {
+			"get": {
+				"operationId": "GetTotalHoldings",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"formattedReport": {
+											"type": "string"
+										},
+										"totalUsd": {
+											"type": "number",
+											"format": "double"
+										}
+									},
+									"required": [
+										"formattedReport",
+										"totalUsd"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Wallet"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/tasks": {
+			"post": {
+				"operationId": "CreateTask",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TrelloCard"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Tasks"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateTaskRequest"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListTodos",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"count": {},
+												"tasks": {
+													"items": {},
+													"type": "array"
+												},
+												"success": {
+													"type": "boolean"
+												},
+												"text": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"tasks",
+												"success",
+												"text"
+											],
+											"type": "object"
+										},
+										{
+											"properties": {
+												"text": {},
+												"tasks": {
+													"items": {
+														"$ref": "#/components/schemas/TrelloCard"
+													},
+													"type": "array"
+												},
+												"count": {
+													"type": "number",
+													"format": "double"
+												},
+												"success": {
+													"type": "boolean"
+												}
+											},
+											"required": [
+												"tasks",
+												"count",
+												"success"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Tasks"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/tasks/bulk": {
+			"post": {
+				"operationId": "CreateMultipleTasks",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										},
+										"tasks": {
+											"items": {},
+											"type": "array"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"message",
+										"tasks",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Tasks"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateMultipleTasksRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/tasks/{taskId}/complete": {
+			"put": {
+				"operationId": "CompleteTask",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TrelloCard"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Tasks"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "taskId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/tasks/{taskId}": {
+			"delete": {
+				"operationId": "DeleteTask",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"message",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Tasks"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "taskId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/tokens": {
+			"get": {
+				"operationId": "GetAllTokens",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/TokenInfo"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Tokens"
+				],
+				"security": [],
+				"parameters": []
+			},
+			"post": {
+				"operationId": "AddToken",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TokenInfo"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Tokens"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateTokenBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/tokens/network/{network}": {
+			"get": {
+				"operationId": "GetTokensByNetwork",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/TokenInfo"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Tokens"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "network",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/tokens/{id}": {
+			"put": {
+				"operationId": "UpdateToken",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TokenInfo"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Tokens"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Partial_CreateTokenBody_"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeleteToken",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"message",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Tokens"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/reminders": {
+			"post": {
+				"operationId": "CreateReminder",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"updatedAt": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"title": {
+											"type": "string"
+										},
+										"reminderTime": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"id": {
+											"type": "string"
+										},
+										"description": {
+											"type": "string"
+										},
+										"createdAt": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"completed": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"updatedAt",
+										"title",
+										"reminderTime",
+										"id",
+										"description",
+										"createdAt",
+										"completed"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Reminders"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateReminderRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/reminders/upcoming": {
+			"get": {
+				"operationId": "GetUpcomingReminders",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"properties": {
+											"updatedAt": {
+												"type": "string",
+												"format": "date-time"
+											},
+											"title": {
+												"type": "string"
+											},
+											"reminderTime": {
+												"type": "string",
+												"format": "date-time"
+											},
+											"id": {
+												"type": "string"
+											},
+											"description": {
+												"type": "string"
+											},
+											"createdAt": {
+												"type": "string",
+												"format": "date-time"
+											},
+											"completed": {
+												"type": "boolean"
+											}
+										},
+										"required": [
+											"updatedAt",
+											"title",
+											"reminderTime",
+											"id",
+											"description",
+											"createdAt",
+											"completed"
+										],
+										"type": "object"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Reminders"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/reminders/{reminderId}/complete": {
+			"put": {
+				"operationId": "UpdateReminderCompletion",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"updatedAt": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"title": {
+											"type": "string"
+										},
+										"reminderTime": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"id": {
+											"type": "string"
+										},
+										"description": {
+											"type": "string"
+										},
+										"createdAt": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"completed": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"updatedAt",
+										"title",
+										"reminderTime",
+										"id",
+										"description",
+										"createdAt",
+										"completed"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Reminders"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "reminderId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/reminders/{reminderId}": {
+			"delete": {
+				"operationId": "DeleteReminder",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"message",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Reminders"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "reminderId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/portfolio/latest": {
+			"get": {
+				"operationId": "GetLatestReport",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"formattedReport": {
+													"type": "string"
+												},
+												"timestamp": {
+													"type": "string",
+													"format": "date-time"
+												},
+												"totalValueUsd": {
+													"type": "number",
+													"format": "double"
+												},
+												"reportId": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"formattedReport",
+												"timestamp",
+												"totalValueUsd",
+												"reportId"
+											],
+											"type": "object"
+										},
+										{
+											"properties": {
+												"message": {
+													"type": "string"
+												},
+												"success": {
+													"type": "boolean"
+												}
+											},
+											"required": [
+												"message",
+												"success"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Portfolio"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/portfolio/generate": {
+			"post": {
+				"operationId": "GenerateReport",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"success": {},
+												"message": {
+													"type": "string"
+												},
+												"totalValueUsd": {
+													"type": "number",
+													"format": "double"
+												},
+												"reportId": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"message",
+												"totalValueUsd",
+												"reportId"
+											],
+											"type": "object"
+										},
+										{
+											"properties": {
+												"totalValueUsd": {},
+												"reportId": {},
+												"message": {
+													"type": "string"
+												},
+												"success": {
+													"type": "boolean"
+												}
+											},
+											"required": [
+												"message",
+												"success"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Portfolio"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/portfolio/chart-data": {
+			"get": {
+				"operationId": "GetChartData",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"items": {
+												"$ref": "#/components/schemas/PortfolioChartDataPoint"
+											},
+											"type": "array"
+										},
+										{
+											"properties": {
+												"message": {
+													"type": "string"
+												},
+												"success": {
+													"type": "boolean"
+												}
+											},
+											"required": [
+												"message",
+												"success"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Portfolio"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "days",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/interests": {
+			"post": {
+				"operationId": "TrackInterest",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"message",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Interests"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/TrackInterestRequest"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "GetInterests",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"count": {},
+												"interests": {
+													"items": {},
+													"type": "array"
+												},
+												"success": {
+													"type": "boolean"
+												},
+												"text": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"interests",
+												"success",
+												"text"
+											],
+											"type": "object"
+										},
+										{
+											"properties": {
+												"text": {},
+												"interests": {
+													"items": {
+														"properties": {
+															"topic": {
+																"type": "string"
+															},
+															"updatedAt": {
+																"type": "string",
+																"format": "date-time"
+															},
+															"id": {
+																"type": "string"
+															},
+															"description": {
+																"type": "string"
+															},
+															"createdAt": {
+																"type": "string",
+																"format": "date-time"
+															}
+														},
+														"required": [
+															"topic",
+															"updatedAt",
+															"id",
+															"description",
+															"createdAt"
+														],
+														"type": "object"
+													},
+													"type": "array"
+												},
+												"count": {
+													"type": "number",
+													"format": "double"
+												},
+												"success": {
+													"type": "boolean"
+												}
+											},
+											"required": [
+												"interests",
+												"count",
+												"success"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Interests"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/interests/{interestId}": {
+			"delete": {
+				"operationId": "DeleteInterest",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"message",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Interests"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "interestId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/finance/analyze": {
+			"post": {
+				"operationId": "AnalyzeFinances",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"summary": {
+											"type": "string"
+										},
+										"data": {
+											"$ref": "#/components/schemas/TransactionTimeRangeAnalysis"
+										}
+									},
+									"required": [
+										"summary",
+										"data"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Finance"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AnalyzeFinancesRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/finance/compare": {
+			"post": {
+				"operationId": "ComparePeriods",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"summary": {
+											"type": "string"
+										},
+										"data": {
+											"properties": {
+												"differences": {
+													"properties": {
+														"categoryChanges": {
+															"items": {
+																"properties": {
+																	"percentageChange": {
+																		"type": "number",
+																		"format": "double"
+																	},
+																	"usdAmountDifference": {
+																		"type": "number",
+																		"format": "double"
+																	},
+																	"category": {
+																		"type": "string"
+																	}
+																},
+																"required": [
+																	"percentageChange",
+																	"usdAmountDifference",
+																	"category"
+																],
+																"type": "object"
+															},
+															"type": "array"
+														},
+														"percentageChange": {
+															"type": "number",
+															"format": "double"
+														},
+														"totalUsdSpendingDifference": {
+															"type": "number",
+															"format": "double"
+														},
+														"totalSpendingDifference": {
+															"type": "number",
+															"format": "double"
+														}
+													},
+													"required": [
+														"categoryChanges",
+														"percentageChange",
+														"totalUsdSpendingDifference",
+														"totalSpendingDifference"
+													],
+													"type": "object"
+												},
+												"secondPeriod": {
+													"$ref": "#/components/schemas/TransactionTimeRangeAnalysis"
+												},
+												"firstPeriod": {
+													"$ref": "#/components/schemas/TransactionTimeRangeAnalysis"
+												}
+											},
+											"required": [
+												"differences",
+												"secondPeriod",
+												"firstPeriod"
+											],
+											"type": "object"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"summary",
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Finance"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ComparePeriodsRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/finance/health": {
+			"get": {
+				"operationId": "HealthCheck",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"status": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"status"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Finance"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/exchange/convert": {
+			"post": {
+				"operationId": "ConvertCurrency",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Exchange"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ConvertCurrencyRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/crypto/token-data": {
+			"post": {
+				"operationId": "GetTokenData",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"networkId": {
+											"type": "number",
+											"format": "double"
+										},
+										"network": {
+											"$ref": "#/components/schemas/BlockchainNetwork"
+										},
+										"contractAddress": {
+											"type": "string"
+										},
+										"decimals": {
+											"type": "number",
+											"format": "double"
+										},
+										"name": {
+											"type": "string"
+										},
+										"symbol": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"networkId",
+										"network",
+										"contractAddress",
+										"decimals",
+										"name",
+										"symbol"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Crypto"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/TokenDataRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/crypto/wallet/balance": {
+			"get": {
+				"operationId": "GetWalletBalance",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"report": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"report"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Crypto"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/crypto/wallet/holdings": {
+			"get": {
+				"operationId": "GetTotalHoldings",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Crypto"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/crypto/binance/balance": {
+			"get": {
+				"operationId": "GetBinanceBalance",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Crypto"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/coinmarketcap/price": {
+			"post": {
+				"operationId": "GetCryptoPrice",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"CoinMarketCap"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CryptoPriceRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/coinmarketcap/details": {
+			"post": {
+				"operationId": "GetTokenDetails",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/TokenDetails"
+										},
+										{
+											"properties": {
+												"message": {
+													"type": "string"
+												},
+												"success": {
+													"type": "boolean"
+												}
+											},
+											"required": [
+												"message",
+												"success"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"CoinMarketCap"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/TokenDetailsRequest"
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "/api"
+		}
+	]
+}

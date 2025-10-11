@@ -1,9 +1,6 @@
 import { logger } from "../utils/logger";
 import { env } from "../config/constants";
 import { BlockchainNetwork } from "./blockchain-types";
-import { tool } from "@langchain/core/tools";
-import { z } from "zod";
-import { langchainService } from "./langchain";
 import { createPublicClient, http, getContract, type PublicClient, type Chain, erc20Abi } from "viem";
 import { mainnet, bsc, polygon, arbitrum, optimism, avalanche, base } from "viem/chains";
 import axios from "axios";
@@ -221,47 +218,6 @@ export class CryptoService {
 const cryptoServiceInstance = new CryptoService();
 
 export function initCryptoService() {
-    // Create LangChain tool for token data
-    const tokenDataTool = tool(
-        async ({ contractAddress, network }) => {
-            try {
-                const tokenData = await cryptoServiceInstance.fetchTokenData(
-                    contractAddress,
-                    network as BlockchainNetwork
-                );
-
-                return JSON.stringify(
-                    {
-                        symbol: tokenData.symbol,
-                        name: tokenData.name,
-                        decimals: tokenData.decimals,
-                        contractAddress: tokenData.contractAddress,
-                        network: tokenData.network,
-                        networkId: tokenData.networkId
-                    },
-                    null,
-                    2
-                );
-            } catch (error) {
-                logger.error(`Error fetching token data:`, error);
-                return `Sorry, I couldn't fetch the token data. ${error instanceof Error ? error.message : "Unknown error"}`;
-            }
-        },
-        {
-            name: "get_token_data",
-            description: "Get token data (symbol, name, decimals) from a contract address on a specific blockchain",
-            schema: z.object({
-                contractAddress: z.string().describe("The token contract address"),
-                network: z
-                    .enum(Object.values(BlockchainNetwork) as [string, ...string[]])
-                    .describe("The blockchain network")
-            })
-        }
-    );
-
-    // Register the tool with LangChain service
-    langchainService.registerTools([tokenDataTool]);
-
     return cryptoServiceInstance;
 }
 
