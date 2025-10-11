@@ -71,6 +71,34 @@ The bot will also send you a daily report of your wallet holdings at 7AM.
 4. Build the project: `npm run build`
 5. Start the bot: `npm start`
 
+### Refreshing Gmail OAuth Tokens
+
+If Gmail access stops working (for example after the refresh token is revoked), use the built-in helper scripts:
+
+1. Generate a new consent link:
+
+   ```bash
+   npm run gmail:auth-url
+   ```
+
+   Open the printed URL, confirm you are using the client ID, secret, and redirect URI defined in the environment variables, and approve the requested scopes.
+
+2. Exchange the returned code for fresh tokens:
+
+   ```bash
+   npm run gmail:exchange-code -- "<AUTHORIZATION_CODE>"
+   ```
+
+   This writes the access and refresh tokens to `.gmail_token.json` for local use.
+
+3. Deployments (Fly.io): copy the new `refresh_token` value from `.gmail_token.json` and update the secret so the app can refresh tokens in production:
+
+   ```bash
+   fly secrets set GMAIL_REFRESH_TOKEN="<REFRESH_TOKEN>" -a <your-app-name>
+   ```
+
+   Restart or redeploy the Fly app to load the updated secret.
+
 ## Development
 
 - Run in development mode: `npm run dev`

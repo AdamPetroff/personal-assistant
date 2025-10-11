@@ -86,6 +86,8 @@
 		"test-langchain": "jest src/__tests__/services/langchain.test.ts",
 		"test-crypto": "jest src/__tests__/services/crypto.test.ts",
 		"test-coinmarketcap": "ts-node src/scripts/test-coinmarketcap-service.ts",
+		"gmail:auth-url": "ts-node src/scripts/gmail.ts auth-url",
+		"gmail:exchange-code": "ts-node src/scripts/gmail.ts exchange",
 		"token-manager": "ts-node src/scripts/tokenManager.ts",
 		"crypto-portfolio": "ts-node src/scripts/cryptoPortfolio.ts",
 		"process-raiffeisen-emails": "ts-node src/commands/processRaiffeisenEmails.ts",

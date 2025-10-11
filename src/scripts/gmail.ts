@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import gmailService, { EmailAttachment } from "../services/gmail";
+import { GMAIL_CONFIG } from "../config/constants";
 import { logger } from "../utils/logger";
 import fs from "fs";
 import path from "path";
@@ -9,6 +10,50 @@ import path from "path";
 const program = new Command();
 
 program.name("gmail-cli").description("CLI tool to interact with Gmail").version("1.0.0");
+
+program
+    .command("auth-url")
+    .description("Print the Gmail OAuth consent URL")
+    .action(() => {
+        if (!GMAIL_CONFIG.clientId || !GMAIL_CONFIG.clientSecret || !GMAIL_CONFIG.redirectUri) {
+            logger.error("Gmail OAuth client configuration is missing. Please check environment variables.");
+            process.exit(1);
+        }
+
+        const authUrl = gmailService.getAuthUrl();
+
+        console.log("\nVisit this URL to authorize Gmail access:\n");
+        console.log(authUrl);
+        console.log("\nAfter granting access, paste the returned code into the exchange command.\n");
+        process.exit(0);
+    });
+
+program
+    .command("exchange")
+    .description("Exchange an OAuth authorization code for tokens and save them locally")
+    .argument("<code>", "Authorization code returned from the OAuth consent screen")
+    .action(async (code: string) => {
+        try {
+            if (!GMAIL_CONFIG.clientId || !GMAIL_CONFIG.clientSecret || !GMAIL_CONFIG.redirectUri) {
+                logger.error("Gmail OAuth client configuration is missing. Please check environment variables.");
+                process.exit(1);
+            }
+
+            logger.info("Exchanging authorization code for tokens...");
+            const success = await gmailService.getTokensFromCode(code.trim());
+
+            if (!success) {
+                logger.error("Failed to exchange authorization code for tokens.");
+                process.exit(1);
+            }
+
+            logger.info("OAuth tokens stored in .gmail_token.json. Remember to update remote secrets if needed.");
+            process.exit(0);
+        } catch (error) {
+            logger.error("Error exchanging authorization code for tokens", error);
+            process.exit(1);
+        }
+    });
 
 // Command to list emails
 program
