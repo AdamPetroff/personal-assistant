@@ -17,10 +17,10 @@ primary_region = 'waw'
   processes = ['app']
 
 [[vm]]
-  memory = '256mb'
+  memory = '512mb'
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 256
+  memory_mb = 512
 
 # Database configuration
 # Note: The DATABASE_URL is automatically set by the 'fly postgres attach' command
